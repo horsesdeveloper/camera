@@ -33,7 +33,7 @@ public class App extends Application {
 ```
 
 ```java
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements CallbackView {
 
     private CallbackManager callbackManager = new CallbackManager();
     ...
