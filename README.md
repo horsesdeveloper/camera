@@ -10,7 +10,16 @@ dependencies {
 ```
 Configuration
 --------------------
+### Android Manifest
 
+First, you have to register a library Activity from your app's `AndroidManifest.xml` file:
+
+```xml
+<activity
+    android:name="app.horses.camera.ui.activity.TakeActivity" />
+```
+
+### Init configuration
 
 ```java
 public class App extends Application {
@@ -31,6 +40,8 @@ public class App extends Application {
     }
 }
 ```
+
+### Add callback and open camera
 
 ```java
 public class MainActivity extends AppCompatActivity implements CallbackView {
