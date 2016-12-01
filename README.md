@@ -34,6 +34,7 @@ public class App extends Application {
         CameraManager.init(
                 new CameraManager.Builder(this)
                     .setPrimaryColor(R.color.colorPrimary)
+                    .enableCropSquare(false) //if cropper in square mode 
                     .build());
 
         ...
