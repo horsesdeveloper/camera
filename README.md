@@ -5,7 +5,7 @@ Download
 
 ```groovy
 dependencies {
-  compile 'com.horsesdeveloper:camera:0.1.3'
+  compile 'com.horsesdeveloper:camera:0.1.4'
 }
 ```
 Configuration
