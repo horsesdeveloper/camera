@@ -25,6 +25,7 @@ public class App extends Application {
         CameraManager.init(
                 new CameraManager.Builder(this)
                     .setPrimaryColor(R.color.colorPrimary)
+                    .enableCropSquare(false)
                     .build());
 
         ImageLoaderConfiguration config = new ImageLoaderConfiguration.Builder(this).build();

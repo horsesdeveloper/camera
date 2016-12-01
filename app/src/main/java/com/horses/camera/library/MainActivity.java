@@ -5,6 +5,7 @@ import android.net.Uri;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 import android.widget.ImageView;
 
 import com.nostra13.universalimageloader.core.ImageLoader;
@@ -30,9 +31,13 @@ public class MainActivity extends AppCompatActivity implements CallbackView {
 
         callbackManager.setCallback(this);
 
-
         image = (ImageView) findViewById(R.id.image);
-
+        image.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                CameraManager.openCamera(MainActivity.this);
+            }
+        });
     }
 
     @Override

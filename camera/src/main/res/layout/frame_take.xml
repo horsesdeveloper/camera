@@ -9,14 +9,12 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
-    <ImageView
+    <com.theartofdev.edmodo.cropper.CropImageView
         android:id="@+id/preview"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:adjustViewBounds="true"
         android:background="#ff282828"
-        android:contentDescription="@null"
-        android:scaleType="fitXY"
         android:visibility="gone" />
 
 </LinearLayout>

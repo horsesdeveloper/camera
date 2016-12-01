@@ -50,6 +50,10 @@ public class CameraManager {
         instance = cameraManager;
     }
 
+    public Builder getBuilder() {
+        return builder;
+    }
+
     public static Application getApplication() {
         return instance.builder.application;
     }
@@ -106,6 +110,18 @@ public class CameraManager {
 
         public CameraManager build() {
             return new CameraManager(this);
+        }
+
+        public boolean isCropSquare() {
+            return cropSquare;
+        }
+
+        public boolean isGallery() {
+            return gallery;
+        }
+
+        public boolean isFrontCamera() {
+            return frontCamera;
         }
     }
 }

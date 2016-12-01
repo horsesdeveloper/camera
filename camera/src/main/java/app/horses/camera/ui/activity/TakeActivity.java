@@ -4,45 +4,35 @@ import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
-import android.annotation.SuppressLint;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.BitmapRegionDecoder;
-import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.PixelFormat;
 import android.graphics.Rect;
 import android.hardware.Camera;
 import android.os.AsyncTask;
 import android.os.Build;
-import android.os.Environment;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
-import android.view.WindowManager;
 import android.view.animation.AccelerateInterpolator;
 import android.view.animation.DecelerateInterpolator;
 import android.view.animation.Interpolator;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.RelativeLayout;
-import android.widget.TextView;
-import android.widget.Toast;
 
-import java.io.ByteArrayInputStream;
+import com.theartofdev.edmodo.cropper.CropImageView;
+
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -52,6 +42,7 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
+import app.horses.camera.CameraManager;
 import app.horses.camera.R;
 import app.horses.camera.util.CameraUtil;
 import app.horses.camera.util.ColorUtils;
@@ -59,7 +50,6 @@ import app.horses.camera.util.Methods;
 import app.horses.camera.util.SimpleAnimatorListener;
 
 import static app.horses.camera.util.Constants.RESULT_ERROR;
-import static app.horses.camera.util.Constants.RESULT_TAKE;
 
 @SuppressWarnings("deprecation")
 public class TakeActivity extends AppCompatActivity implements SurfaceHolder.Callback {
@@ -87,6 +77,8 @@ public class TakeActivity extends AppCompatActivity implements SurfaceHolder.Cal
     private float dist;
     private int curZoomValue = 0;
 
+    private boolean isSquare = false;
+
     private int step = 0;
 
     private static final Interpolator ACCELERATE_INTERPOLATOR = new AccelerateInterpolator();
@@ -95,7 +87,7 @@ public class TakeActivity extends AppCompatActivity implements SurfaceHolder.Cal
     protected SurfaceView surface;
     protected LinearLayout layout;
     protected ImageView take;
-    protected ImageView preview;
+    protected CropImageView preview;
     protected View shutter;
     protected View ripple;
     protected View controllersCamera;
@@ -126,10 +118,15 @@ public class TakeActivity extends AppCompatActivity implements SurfaceHolder.Cal
             getWindow().setStatusBarColor(CameraUtil.darkenColor(ColorUtils.getPrimaryColor()));
         }
 
+        if (CameraManager.getInstance() != null) {
+
+            isSquare = CameraManager.getInstance().getBuilder().isCropSquare();
+        }
+
         surface = (SurfaceView) findViewById(R.id.surface);
         layout = (LinearLayout) findViewById(R.id.layout);
         take = (ImageView) findViewById(R.id.take);
-        preview = (ImageView) findViewById(R.id.preview);
+        preview = (CropImageView) findViewById(R.id.preview);
         shutter = findViewById(R.id.shutter);
         ripple = findViewById(R.id.ripple);
         controllersCamera = findViewById(R.id.camera);
@@ -141,6 +138,7 @@ public class TakeActivity extends AppCompatActivity implements SurfaceHolder.Cal
 
         width = Methods.getWidthScreen();
         height = Methods.getHeightScreen() - Methods.toPixels(80);
+        Log.d(TAG, "onCreate() called with: width = [" + width + "], height = [" + height + "]");
 
         holder = surface.getHolder();
         holder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
@@ -235,6 +233,8 @@ public class TakeActivity extends AppCompatActivity implements SurfaceHolder.Cal
         save.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+
+                Bitmap saveBitmap = preview.getCroppedImage();
 
                 File f = persistImage(saveBitmap);
 
@@ -462,7 +462,7 @@ public class TakeActivity extends AppCompatActivity implements SurfaceHolder.Cal
 
             Log.d(TAG, "doInBackground() called with: width = [" + width + "], height = [" + height + "]");
 
-            final int maxWidth = 1200;
+            final int maxWidth = 1800;
             float newScale = (float) (maxWidth * 1.0 / width);
 
             Matrix matrix = new Matrix();
@@ -500,6 +500,8 @@ public class TakeActivity extends AppCompatActivity implements SurfaceHolder.Cal
 
             saveBitmap = bitmap;
             preview.setImageBitmap(saveBitmap);
+            preview.setFixedAspectRatio(isSquare);
+            preview.setScaleType(CropImageView.ScaleType.CENTER_INSIDE);
         }
     }
 
