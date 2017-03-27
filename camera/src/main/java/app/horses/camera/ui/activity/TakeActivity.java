@@ -1,5 +1,6 @@
 package app.horses.camera.ui.activity;
 
+import android.Manifest;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
@@ -7,6 +8,7 @@ import android.animation.ObjectAnimator;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
@@ -46,15 +48,21 @@ import app.horses.camera.CameraManager;
 import app.horses.camera.R;
 import app.horses.camera.util.CameraUtil;
 import app.horses.camera.util.ColorUtils;
+import app.horses.camera.util.Constants;
 import app.horses.camera.util.Methods;
 import app.horses.camera.util.SimpleAnimatorListener;
+import pub.devrel.easypermissions.AfterPermissionGranted;
+import pub.devrel.easypermissions.EasyPermissions;
 
+import static app.horses.camera.util.Constants.EXTRA_FOLDER_PATH;
 import static app.horses.camera.util.Constants.RESULT_ERROR;
 
 @SuppressWarnings("deprecation")
-public class TakeActivity extends AppCompatActivity implements SurfaceHolder.Callback {
+public class TakeActivity extends AppCompatActivity implements SurfaceHolder.Callback,
+        EasyPermissions.PermissionCallbacks {
 
     private static final String TAG = TakeActivity.class.getSimpleName();
+    private static final int RC_WRITESD_PERMISSIONS_REQUIRED =101;
 
     private static final int PHOTO_SIZE = 1200;
     private static final int MIN_PREVIEW_PIXELS = 480 * 320;
@@ -103,9 +111,21 @@ public class TakeActivity extends AppCompatActivity implements SurfaceHolder.Cal
     private int width = 0;
     private int height = 0;
 
+    private String folderPath;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        Intent intent = getIntent();
+        if (intent.hasExtra(EXTRA_FOLDER_PATH)) {
+            folderPath = intent.getStringExtra(EXTRA_FOLDER_PATH);
+        }
+
+        methodRequirePermissions();
+    }
+
+    private void initActivity(){
         setContentView(R.layout.activity_take);
 
         // TODO: 18/11/2016 transparent status bar
@@ -117,6 +137,9 @@ public class TakeActivity extends AppCompatActivity implements SurfaceHolder.Cal
             getWindow().setStatusBarColor(Color.TRANSPARENT);*/
             getWindow().setStatusBarColor(CameraUtil.darkenColor(ColorUtils.getPrimaryColor()));
         }
+
+        //Prevent screen change
+        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
 
         if (CameraManager.getInstance() != null) {
 
@@ -235,8 +258,19 @@ public class TakeActivity extends AppCompatActivity implements SurfaceHolder.Cal
             public void onClick(View view) {
 
                 Bitmap saveBitmap = preview.getCroppedImage();
+                File filesDir;
+                if(folderPath!=null){
+                    filesDir = new File(folderPath);
 
-                File f = persistImage(saveBitmap);
+                    //Create folder if not Exists
+                    if(!filesDir.exists()){
+                        filesDir.mkdirs();
+                    }
+                } else {
+                    filesDir = getFilesDir();
+                }
+
+                File f = persistImage(saveBitmap,filesDir);
 
                 Log.i(TAG, "file size: " + (f.length() / 1024) + "kb");
 
@@ -258,9 +292,7 @@ public class TakeActivity extends AppCompatActivity implements SurfaceHolder.Cal
         });
     }
 
-    private File persistImage(Bitmap bitmap) {
-        File filesDir = getFilesDir();
-
+    private File persistImage(Bitmap bitmap, File filesDir) {
         String name = String.format(filesDir  + "/%s.jpg", new Date().getTime());
 
         File imageFile = new File(name);
@@ -809,5 +841,39 @@ public class TakeActivity extends AppCompatActivity implements SurfaceHolder.Cal
         });
 
         animatorSet.start();
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
+        // Forward results to EasyPermissions
+        EasyPermissions.onRequestPermissionsResult(requestCode, permissions, grantResults, this);
+    }
+
+
+    @AfterPermissionGranted(RC_WRITESD_PERMISSIONS_REQUIRED)
+    private void methodRequirePermissions() {
+        String[] perms = {Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                Manifest.permission.CAMERA
+        };
+        if (EasyPermissions.hasPermissions(this, perms)) {
+            initActivity();
+        } else {
+            // Do not have permissions, request them now
+            EasyPermissions.requestPermissions(this, "Required permissions",
+                    RC_WRITESD_PERMISSIONS_REQUIRED, perms);
+        }
+    }
+
+    @Override
+    public void onPermissionsGranted(int requestCode, List<String> list) {
+        initActivity();
+    }
+
+    @Override
+    public void onPermissionsDenied(int requestCode, List<String> list) {
+        setResult(RESULT_ERROR);
+        finish();
     }
 }

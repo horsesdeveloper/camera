@@ -31,6 +31,11 @@ install {
                         name 'Brian Castillo'
                         email 'briancastillo008@gmail.com'
                     }
+                    developer {
+                        id 'andres-vasquez'
+                        name 'Andres Vasquez'
+                        email 'andres.vasquez.agramont@gmail.com'
+                    }
                 }
                 scm {
                     connection gitUrl

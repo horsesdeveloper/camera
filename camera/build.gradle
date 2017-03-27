@@ -4,7 +4,7 @@ version = "0.1.4"
 
 android {
     compileSdkVersion 25
-    buildToolsVersion "25.0.0"
+    buildToolsVersion "25.0.2"
 
     defaultConfig {
         minSdkVersion 16
@@ -24,9 +24,12 @@ android {
 }
 
 dependencies {
-    compile 'com.android.support:appcompat-v7:25.0.0'
-    compile 'com.android.support:design:25.0.0'
+    compile 'com.android.support:appcompat-v7:25.1.1'
+    compile 'com.android.support:design:25.1.1'
     compile 'com.theartofdev.edmodo:android-image-cropper:2.3.1'
+
+    //Add permissions Android Version > 6
+    compile 'pub.devrel:easypermissions:0.2.1'
 }
 
 apply from: '../camera.gradle'
