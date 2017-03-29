@@ -54,6 +54,7 @@ import app.horses.camera.util.SimpleAnimatorListener;
 import pub.devrel.easypermissions.AfterPermissionGranted;
 import pub.devrel.easypermissions.EasyPermissions;
 
+import static app.horses.camera.util.Constants.EXTRA_FILENAME_PATH;
 import static app.horses.camera.util.Constants.EXTRA_FOLDER_PATH;
 import static app.horses.camera.util.Constants.RESULT_ERROR;
 
@@ -113,6 +114,7 @@ public class TakeActivity extends AppCompatActivity implements SurfaceHolder.Cal
     private int height = 0;
 
     private String folderPath;
+    private String fileName;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -121,6 +123,10 @@ public class TakeActivity extends AppCompatActivity implements SurfaceHolder.Cal
         Intent intent = getIntent();
         if (intent.hasExtra(EXTRA_FOLDER_PATH)) {
             folderPath = intent.getStringExtra(EXTRA_FOLDER_PATH);
+        }
+
+        if (intent.hasExtra(EXTRA_FILENAME_PATH)) {
+            fileName = intent.getStringExtra(EXTRA_FILENAME_PATH);
         }
 
         methodRequirePermissions();
@@ -321,7 +327,13 @@ public class TakeActivity extends AppCompatActivity implements SurfaceHolder.Cal
     }
 
     private File persistImage(Bitmap bitmap, File filesDir) {
-        String name = String.format(filesDir  + "/%s.jpg", new Date().getTime());
+
+        String name="";
+        if(fileName!=null){
+            name = String.format(filesDir  + "/%s.jpg", fileName);
+        } else {
+            name = String.format(filesDir  + "/%s.jpg", new Date().getTime());
+        }
 
         File imageFile = new File(name);
 

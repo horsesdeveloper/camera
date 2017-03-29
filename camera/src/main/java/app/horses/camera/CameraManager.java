@@ -53,6 +53,13 @@ public class CameraManager {
         activity.startActivityForResult(intent, REQUEST_TAKE);
     }
 
+    public static void openCamera(Activity activity, String path, String filename) {
+        Intent intent=new Intent(activity, TakeActivity.class);
+        intent.putExtra(Constants.EXTRA_FOLDER_PATH,path);
+        intent.putExtra(Constants.EXTRA_FILENAME_PATH,filename);
+        activity.startActivityForResult(intent, REQUEST_TAKE);
+    }
+
     public static void init(CameraManager cameraManager) {
         instance = cameraManager;
     }

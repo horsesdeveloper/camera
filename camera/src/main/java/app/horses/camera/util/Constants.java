@@ -10,6 +10,7 @@ public class Constants {
     public static final int RESULT_ERROR = 66;
 
     public static final String EXTRA_FOLDER_PATH = "folderPath";
+    public static final String EXTRA_FILENAME_PATH = "fileNamePath";
 
     private static final String TAG = Constants.class.getSimpleName();
 }

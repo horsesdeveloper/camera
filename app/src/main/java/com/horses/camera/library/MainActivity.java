@@ -32,12 +32,17 @@ public class MainActivity extends AppCompatActivity implements CallbackView {
         setContentView(R.layout.activity_main);
         context=this;
 
-        //CameraManager.openCamera(this);
+        // Default Use
+        // CameraManager.openCamera(this);
 
         File root = Environment.getExternalStorageDirectory();
         File dirBase=new File(root, "horsesCamera");
 
-        CameraManager.openCamera(this,dirBase.getPath());
+        // Custom Path
+        //CameraManager.openCamera(this,dirBase.getPath());
+
+        // Custom path and filename without extension
+        CameraManager.openCamera(this,dirBase.getPath(),"MyPhoto");
 
         callbackManager.setCallback(this);
 
