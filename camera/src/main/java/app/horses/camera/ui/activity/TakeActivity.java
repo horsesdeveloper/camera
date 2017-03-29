@@ -85,6 +85,7 @@ public class TakeActivity extends AppCompatActivity implements SurfaceHolder.Cal
     private float dist;
     private int curZoomValue = 0;
 
+    private boolean isCropEnabled = false;
     private boolean isSquare = false;
 
     private int step = 0;
@@ -142,7 +143,10 @@ public class TakeActivity extends AppCompatActivity implements SurfaceHolder.Cal
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
 
         if (CameraManager.getInstance() != null) {
+            isCropEnabled = CameraManager.getInstance().getBuilder().isCropEnabled();
+        }
 
+        if (CameraManager.getInstance() != null) {
             isSquare = CameraManager.getInstance().getBuilder().isCropSquare();
         }
 
@@ -158,6 +162,24 @@ public class TakeActivity extends AppCompatActivity implements SurfaceHolder.Cal
         save = (Button) findViewById(R.id.save);
 
         layout.setBackgroundColor(ColorUtils.getPrimaryColor());
+
+        //Camera controls customization
+        if (CameraManager.getInstance() != null) {
+            CameraManager.Builder cameraBuilder=CameraManager.getInstance().getBuilder();
+
+            String retryText=cameraBuilder.getRetryText();
+            retry.setText(retryText);
+            retry.setTransformationMethod(null);
+
+            String saveText = cameraBuilder.getSaveText();
+            save.setText(saveText);
+            save.setTransformationMethod(null);
+
+            take.setImageResource(cameraBuilder.getIconCaptureIcon());
+
+            isSquare = CameraManager.getInstance().getBuilder().isCropSquare();
+        }
+
 
         width = Methods.getWidthScreen();
         height = Methods.getHeightScreen() - Methods.toPixels(80);
@@ -257,7 +279,13 @@ public class TakeActivity extends AppCompatActivity implements SurfaceHolder.Cal
             @Override
             public void onClick(View view) {
 
-                Bitmap saveBitmap = preview.getCroppedImage();
+                Bitmap bitmapToSave=null;
+                if(isCropEnabled){
+                    bitmapToSave = preview.getCroppedImage();
+                } else {
+                    bitmapToSave=saveBitmap;
+                }
+
                 File filesDir;
                 if(folderPath!=null){
                     filesDir = new File(folderPath);
@@ -270,7 +298,7 @@ public class TakeActivity extends AppCompatActivity implements SurfaceHolder.Cal
                     filesDir = getFilesDir();
                 }
 
-                File f = persistImage(saveBitmap,filesDir);
+                File f = persistImage(bitmapToSave,filesDir);
 
                 Log.i(TAG, "file size: " + (f.length() / 1024) + "kb");
 
@@ -280,7 +308,7 @@ public class TakeActivity extends AppCompatActivity implements SurfaceHolder.Cal
                 setResult(RESULT_OK, intent);
                 finish();
 
-                saveBitmap.recycle();
+                bitmapToSave.recycle();
             }
         });
 
@@ -359,6 +387,8 @@ public class TakeActivity extends AppCompatActivity implements SurfaceHolder.Cal
 
                 controllersCamera.setVisibility(View.VISIBLE);
                 controllersAccept.setVisibility(View.GONE);
+
+                initCamera();
                 break;
         }
     }
@@ -524,16 +554,19 @@ public class TakeActivity extends AppCompatActivity implements SurfaceHolder.Cal
 
             step = 1;
 
-            surface.setVisibility(View.GONE);
-            preview.setVisibility(View.VISIBLE);
-
+            saveBitmap = bitmap;
             controllersCamera.setVisibility(View.GONE);
             controllersAccept.setVisibility(View.VISIBLE);
 
-            saveBitmap = bitmap;
-            preview.setImageBitmap(saveBitmap);
-            preview.setFixedAspectRatio(isSquare);
-            preview.setScaleType(CropImageView.ScaleType.CENTER_INSIDE);
+            //Show crop options
+            if(isCropEnabled){
+                surface.setVisibility(View.GONE);
+                preview.setVisibility(View.VISIBLE);
+
+                preview.setImageBitmap(saveBitmap);
+                preview.setFixedAspectRatio(isSquare);
+                preview.setScaleType(CropImageView.ScaleType.CENTER_INSIDE);
+            }
         }
     }
 

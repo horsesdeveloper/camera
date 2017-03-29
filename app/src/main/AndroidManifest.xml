@@ -34,9 +34,6 @@
         <activity
             android:name="app.horses.camera.ui.activity.TakeActivity"
             android:theme="@style/CameraTheme" />
-        <activity
-            android:name="app.horses.camera.ui.activity.CropperActivity"
-            android:theme="@style/CameraTheme" />
     </application>
 
 </manifest>

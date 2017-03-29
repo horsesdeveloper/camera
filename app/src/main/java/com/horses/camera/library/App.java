@@ -19,10 +19,20 @@ public class App extends Application {
         //CameraManager.init(this);
 
         /** Complete usage */
+        /*CameraManager.init(
+                new CameraManager.Builder(this)
+                    .setPrimaryColor(R.color.colorAccent)
+                    .enableCrop(true)
+                    .build());*/
+
+        /** Customization */
         CameraManager.init(
                 new CameraManager.Builder(this)
-                    .setPrimaryColor(R.color.colorPrimary)
-                    .enableCropSquare(false)
-                    .build());
+                        .setPrimaryColor(R.color.colorAccent)
+                        .setCaptureIcon(R.drawable.custom_shutter)
+                        .setSaveText("Guardar")
+                        .setRetryText("Nueva")
+                        .enableCrop(false)
+                        .build());
     }
 }

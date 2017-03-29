@@ -5,6 +5,7 @@ import android.app.Application;
 import android.content.Context;
 import android.content.Intent;
 import android.support.annotation.ColorRes;
+import android.support.annotation.DrawableRes;
 import android.support.annotation.StringRes;
 
 import app.horses.camera.ui.activity.TakeActivity;
@@ -43,11 +44,10 @@ public class CameraManager {
 
 
     public static void openCamera(Activity activity) {
-
         activity.startActivityForResult(new Intent(activity, TakeActivity.class), REQUEST_TAKE);
     }
 
-    public static void openCamera(Activity activity,String path) {
+    public static void openCamera(Activity activity, String path) {
         Intent intent=new Intent(activity, TakeActivity.class);
         intent.putExtra(Constants.EXTRA_FOLDER_PATH,path);
         activity.startActivityForResult(intent, REQUEST_TAKE);
@@ -74,7 +74,13 @@ public class CameraManager {
 
         protected String packageName = CameraManager.class.getPackage().getName();
         protected int primaryColor = 0;
+        protected int iconCaptureIcon=R.drawable.ic_camera_white_36dp;
 
+        //Internationalation
+        protected String retryText="";
+        protected String saveText="";
+
+        protected boolean cropEnabled = false;
         protected boolean cropSquare = false;
         protected boolean gallery = false;
         protected boolean frontCamera = false;
@@ -100,8 +106,28 @@ public class CameraManager {
             return this;
         }
 
+        public Builder setCaptureIcon(@DrawableRes int iconResource) {
+            this.iconCaptureIcon = iconResource;
+            return this;
+        }
+
+        public Builder enableCrop(boolean cropEnable) {
+            this.cropEnabled = cropEnable;
+            return this;
+        }
+
         public Builder enableCropSquare(boolean cropSquare) {
             this.cropSquare = cropSquare;
+            return this;
+        }
+
+        public Builder setRetryText(String text) {
+            this.retryText = text;
+            return this;
+        }
+
+        public Builder setSaveText(String text) {
+            this.saveText = text;
             return this;
         }
 
@@ -123,12 +149,28 @@ public class CameraManager {
             return cropSquare;
         }
 
+        public boolean isCropEnabled() {
+            return cropEnabled;
+        }
+
         public boolean isGallery() {
             return gallery;
         }
 
         public boolean isFrontCamera() {
             return frontCamera;
+        }
+
+        public int getIconCaptureIcon() {
+            return iconCaptureIcon;
+        }
+
+        public String getRetryText() {
+            return retryText;
+        }
+
+        public String getSaveText() {
+            return saveText;
         }
     }
 }

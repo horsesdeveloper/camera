@@ -36,8 +36,8 @@ public class MainActivity extends AppCompatActivity implements CallbackView {
 
         File root = Environment.getExternalStorageDirectory();
         File dirBase=new File(root, "horsesCamera");
-        CameraManager.openCamera(this,dirBase.getPath());
 
+        CameraManager.openCamera(this,dirBase.getPath());
 
         callbackManager.setCallback(this);
 
