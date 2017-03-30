@@ -42,7 +42,11 @@ public class MainActivity extends AppCompatActivity implements CallbackView {
         //CameraManager.openCamera(this,dirBase.getPath());
 
         // Custom path and filename without extension
-        CameraManager.openCamera(this,dirBase.getPath(),"MyPhoto");
+        //CameraManager.openCamera(this,dirBase.getPath(),"MyPhoto");
+
+
+        //Open from gallery
+        CameraManager.openGallery(this);
 
         callbackManager.setCallback(this);
 
@@ -58,7 +62,7 @@ public class MainActivity extends AppCompatActivity implements CallbackView {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        callbackManager.onActivityResult(requestCode, resultCode, data);
+        callbackManager.onActivityResult(this,requestCode, resultCode, data);
     }
 
     @Override

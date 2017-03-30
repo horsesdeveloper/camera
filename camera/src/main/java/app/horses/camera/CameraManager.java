@@ -12,6 +12,7 @@ import app.horses.camera.ui.activity.TakeActivity;
 import app.horses.camera.util.Constants;
 import app.horses.camera.util.Methods;
 
+import static app.horses.camera.util.Constants.REQUEST_GALLERY;
 import static app.horses.camera.util.Constants.REQUEST_TAKE;
 
 /**
@@ -58,6 +59,11 @@ public class CameraManager {
         intent.putExtra(Constants.EXTRA_FOLDER_PATH,path);
         intent.putExtra(Constants.EXTRA_FILENAME_PATH,filename);
         activity.startActivityForResult(intent, REQUEST_TAKE);
+    }
+
+    public static void openGallery(Activity activity) {
+        Intent i = new Intent(Intent.ACTION_PICK,android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+        activity.startActivityForResult(i, REQUEST_GALLERY);
     }
 
     public static void init(CameraManager cameraManager) {

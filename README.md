@@ -5,7 +5,7 @@ Download
 
 ```groovy
 dependencies {
-  compile 'com.horsesdeveloper:camera:0.1.4'
+  compile 'com.horsesdeveloper:camera:0.1.5'
 }
 ```
 Configuration
@@ -62,7 +62,7 @@ public class MainActivity extends AppCompatActivity implements CallbackView {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        callbackManager.onActivityResult(requestCode, resultCode, data);
+        callbackManager.onActivityResult(this,requestCode, resultCode, data);
     }
     
     @Override
