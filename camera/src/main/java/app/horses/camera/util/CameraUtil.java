@@ -8,8 +8,6 @@ import android.support.annotation.ColorInt;
  */
 public class CameraUtil {
 
-    private static final String TAG = CameraUtil.class.getSimpleName();
-
     @ColorInt
     public static int darkenColor(@ColorInt int color) {
         float[] hsv = new float[3];

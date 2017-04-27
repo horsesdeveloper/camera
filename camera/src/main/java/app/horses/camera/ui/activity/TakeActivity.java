@@ -48,18 +48,14 @@ import app.horses.camera.CameraManager;
 import app.horses.camera.R;
 import app.horses.camera.util.CameraUtil;
 import app.horses.camera.util.ColorUtils;
-import app.horses.camera.util.Constants;
 import app.horses.camera.util.Methods;
 import app.horses.camera.util.SimpleAnimatorListener;
-import pub.devrel.easypermissions.AfterPermissionGranted;
-import pub.devrel.easypermissions.EasyPermissions;
 
 import static app.horses.camera.util.Constants.EXTRA_FOLDER_PATH;
 import static app.horses.camera.util.Constants.RESULT_ERROR;
 
-@SuppressWarnings("deprecation")
-public class TakeActivity extends AppCompatActivity implements SurfaceHolder.Callback,
-        EasyPermissions.PermissionCallbacks {
+@Deprecated
+public class TakeActivity extends AppCompatActivity implements SurfaceHolder.Callback {
 
     private static final String TAG = TakeActivity.class.getSimpleName();
     private static final int RC_WRITESD_PERMISSIONS_REQUIRED =101;
@@ -122,7 +118,7 @@ public class TakeActivity extends AppCompatActivity implements SurfaceHolder.Cal
             folderPath = intent.getStringExtra(EXTRA_FOLDER_PATH);
         }
 
-        methodRequirePermissions();
+        initActivity();
     }
 
     private void initActivity(){
@@ -143,7 +139,7 @@ public class TakeActivity extends AppCompatActivity implements SurfaceHolder.Cal
 
         if (CameraManager.getInstance() != null) {
 
-            isSquare = CameraManager.getInstance().getBuilder().isCropSquare();
+            //isSquare = CameraManager.getInstance().getBuilder().isCropSquare();
         }
 
         surface = (SurfaceView) findViewById(R.id.surface);
@@ -841,39 +837,5 @@ public class TakeActivity extends AppCompatActivity implements SurfaceHolder.Cal
         });
 
         animatorSet.start();
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-
-        // Forward results to EasyPermissions
-        EasyPermissions.onRequestPermissionsResult(requestCode, permissions, grantResults, this);
-    }
-
-
-    @AfterPermissionGranted(RC_WRITESD_PERMISSIONS_REQUIRED)
-    private void methodRequirePermissions() {
-        String[] perms = {Manifest.permission.WRITE_EXTERNAL_STORAGE,
-                Manifest.permission.CAMERA
-        };
-        if (EasyPermissions.hasPermissions(this, perms)) {
-            initActivity();
-        } else {
-            // Do not have permissions, request them now
-            EasyPermissions.requestPermissions(this, "Required permissions",
-                    RC_WRITESD_PERMISSIONS_REQUIRED, perms);
-        }
-    }
-
-    @Override
-    public void onPermissionsGranted(int requestCode, List<String> list) {
-        initActivity();
-    }
-
-    @Override
-    public void onPermissionsDenied(int requestCode, List<String> list) {
-        setResult(RESULT_ERROR);
-        finish();
     }
 }

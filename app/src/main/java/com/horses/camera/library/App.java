@@ -22,7 +22,12 @@ public class App extends Application {
         CameraManager.init(
                 new CameraManager.Builder(this)
                     .setPrimaryColor(R.color.colorPrimary)
-                    .enableCropSquare(false)
+                    .enableCropView(true)
+                    .enableCropSquare(true)
+                    .enableFrontCamera(true)
+                    .enableFlash(true)
+                    .setQuality(80)
+                    .setFormat(CameraManager.FORMAT_WEBP)
                     .build());
     }
 }

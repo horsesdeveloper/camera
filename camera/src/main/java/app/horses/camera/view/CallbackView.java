@@ -4,7 +4,6 @@ package app.horses.camera.view;
  * @author Brian Salvattore
  */
 public interface CallbackView {
-    void successCamera(String path);
-    void errorCamera();
-    void cancelCamera();
+    void onSuccessCamera(String path);
+    void onFailureCamera(Throwable throwable);
 }

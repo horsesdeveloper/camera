@@ -15,6 +15,7 @@ import java.io.File;
 
 import app.horses.camera.CameraManager;
 import app.horses.camera.CallbackManager;
+import app.horses.camera.ui.activity.GetActivity;
 import app.horses.camera.view.CallbackView;
 
 public class MainActivity extends AppCompatActivity implements CallbackView {
@@ -34,9 +35,9 @@ public class MainActivity extends AppCompatActivity implements CallbackView {
 
         //CameraManager.openCamera(this);
 
-        File root = Environment.getExternalStorageDirectory();
+        /*File root = Environment.getExternalStorageDirectory();
         File dirBase=new File(root, "horsesCamera");
-        CameraManager.openCamera(this,dirBase.getPath());
+        CameraManager.openCamera(this, dirBase.getPath());
 
 
         callbackManager.setCallback(this);
@@ -47,7 +48,20 @@ public class MainActivity extends AppCompatActivity implements CallbackView {
             public void onClick(View view) {
                 CameraManager.openCamera(MainActivity.this);
             }
+        });*/
+
+        callbackManager.setCallback(this);
+        CameraManager.openCamera2(this);
+
+        image = (ImageView) findViewById(R.id.image);
+        image.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                CameraManager.openCamera2(MainActivity.this);
+            }
         });
+
+        /*startActivity(new Intent(this, GetActivity.class));*/
     }
 
     @Override
@@ -57,7 +71,7 @@ public class MainActivity extends AppCompatActivity implements CallbackView {
     }
 
     @Override
-    public void successCamera(String path) {
+    public void onSuccessCamera(String path) {
         Log.i(TAG, "successCamera: " + path);
 
         path = "file:///" + path;
@@ -66,14 +80,8 @@ public class MainActivity extends AppCompatActivity implements CallbackView {
     }
 
     @Override
-    public void errorCamera() {
-        Log.i(TAG, "errorCamera");
-
+    public void onFailureCamera(Throwable throwable) {
+        Log.e(TAG, "onFailureCamera: ", throwable);
     }
 
-    @Override
-    public void cancelCamera() {
-        Log.i(TAG, "cancelCamera");
-
-    }
 }

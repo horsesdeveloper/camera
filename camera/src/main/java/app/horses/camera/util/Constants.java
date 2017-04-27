@@ -3,13 +3,15 @@ package app.horses.camera.util;
 /**
  * @author Brian Salvattore
  */
-public class Constants {
+public interface Constants {
 
-    public static final int REQUEST_TAKE = 3923;
-    public static final int RESULT_TAKE = 1615;
-    public static final int RESULT_ERROR = 66;
+    int REQUEST_TAKE = 3923;
+    int RESULT_TAKE = 1615;
+    int RESULT_ERROR = 66;
 
-    public static final String EXTRA_FOLDER_PATH = "folderPath";
+    String EXTRA_FOLDER_PATH = "folderPath";
 
-    private static final String TAG = Constants.class.getSimpleName();
+    int FORMAT_JPG = 0;
+    int FORMAT_PNG = 1;
+    int FORMAT_WEBP = 2;
 }

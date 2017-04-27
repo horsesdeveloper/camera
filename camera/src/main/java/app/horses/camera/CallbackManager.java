@@ -17,10 +17,23 @@ public class CallbackManager  {
 
     private static final String TAG = CallbackManager.class.getSimpleName();
 
+    private static CallbackManager instance;
     private CallbackView callback;
+
+    public CallbackManager() {
+        instance = this;
+    }
 
     public void setCallback(CallbackView callback) {
         this.callback = callback;
+    }
+
+    public static CallbackManager getInstance() {
+        return instance;
+    }
+
+    public static CallbackView getCallback() {
+        return getInstance().callback;
     }
 
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -32,17 +45,15 @@ public class CallbackManager  {
 
                 case RESULT_OK:
                     String path = data.getStringExtra("uri");
-                    callback.successCamera(path);
+                    callback.onSuccessCamera(path);
                     break;
-                case RESULT_CANCELED:
+                /*case RESULT_CANCELED:
                     callback.cancelCamera();
-                    break;
+                    break;*/
                 case RESULT_ERROR:
-                    callback.errorCamera();
+                    callback.onFailureCamera(new Throwable("kgfiffgfit"));
                     break;
             }
-
         }
-
     }
 }

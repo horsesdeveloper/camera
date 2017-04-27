@@ -7,6 +7,9 @@
         android:hardwareAccelerated="true"
         android:allowBackup="true"
         android:supportsRtl="true">
+        <activity
+            android:name="app.horses.camera.ui.activity.GetActivity"
+            android:theme="@style/CameraTheme" />
     </application>
 
 </manifest>

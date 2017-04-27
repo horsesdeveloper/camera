@@ -24,12 +24,11 @@ android {
 }
 
 dependencies {
-    compile 'com.android.support:appcompat-v7:25.1.1'
-    compile 'com.android.support:design:25.1.1'
+    compile 'com.android.support:appcompat-v7:25.3.1'
+    compile 'com.android.support:design:25.3.1'
     compile 'com.theartofdev.edmodo:android-image-cropper:2.3.1'
-
-    //Add permissions Android Version > 6
-    compile 'pub.devrel:easypermissions:0.2.1'
+    compile "com.android.support:exifinterface:25.3.1"
+    compile project(':library')
 }
 
 apply from: '../camera.gradle'
