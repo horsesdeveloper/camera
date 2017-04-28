@@ -31,6 +31,9 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 
+
+/*import com.edmodo.cropper.CropImageView;*/
+
 import com.theartofdev.edmodo.cropper.CropImageView;
 
 import java.io.File;

@@ -23,6 +23,8 @@ import android.view.animation.Interpolator;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 
+/*import com.edmodo.cropper.CropImageView;*/
+import com.google.android.cameraview.AspectRatio;
 import com.google.android.cameraview.CameraView;
 import com.theartofdev.edmodo.cropper.CropImageView;
 
@@ -37,6 +39,7 @@ import app.horses.camera.CameraManager;
 import app.horses.camera.R;
 import app.horses.camera.util.CameraUtil;
 import app.horses.camera.util.ColorUtils;
+import app.horses.camera.util.Methods;
 
 /**
  * @author Brian Salvattore
@@ -90,16 +93,22 @@ public class GetActivity extends AppCompatActivity {
         findViewById(R.id.facing).setVisibility(CameraManager.isFrontCamera() ? View.VISIBLE : View.GONE);
         findViewById(R.id.layout).setBackgroundColor(ColorUtils.getPrimaryColor());
 
+        preview.setFixedAspectRatio(cropSquare);
+        preview.setScaleType(CropImageView.ScaleType.FIT_CENTER);
+
         cameraView.addCallback(getCameraCallback());
         cameraView.setFacing(facing);
         cameraView.setFlash(flash);
-        cameraView.setAdjustViewBounds(true);
+        //cameraView.setAspectRatio(AspectRatio.of(3, 2));
+        //cameraView.setAdjustViewBounds(true);
 
         findViewById(R.id.take).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 findViewById(R.id.take).setEnabled(false);
                 animateShutter();
+                //cameraView.setAspectRatio(AspectRatio.of(16, 9));
+                //verifyAspectRatio();
                 cameraView.takePicture();
             }
         });
@@ -156,6 +165,41 @@ public class GetActivity extends AppCompatActivity {
         });
     }
 
+    private void verifyAspectRatio() {
+
+        final double screenRatio = round(Methods.getHeightScreen() / (Methods.getWidthScreen() * 1.0), 2);
+        AspectRatio ratio = null;
+
+        for (AspectRatio aspectRatio : cameraView.getSupportedAspectRatios()) {
+
+            final double ar = round(aspectRatio.getX() / (aspectRatio.getY() * 1.0), 2);
+
+            final double result = screenRatio - ar;
+            final double k = 0.1;
+
+            if (result <= k && result >= (k * -1)) {
+                Log.d(TAG, "verifyAspectRatio() called aspectRatio=[" + aspectRatio + "]");
+                ratio = aspectRatio;
+                break;
+            }
+        }
+
+        if (ratio == null) return;
+
+        cameraView.setAspectRatio(ratio);
+
+        Log.d(TAG, "verifyAspectRatio() called ratio=[" + ratio + "]");
+    }
+
+    public static double round(double value, int places) {
+        if (places < 0) throw new IllegalArgumentException();
+
+        long factor = (long) Math.pow(10, places);
+        value = value * factor;
+        long tmp = Math.round(value);
+        return (double) tmp / factor;
+    }
+
     @Override
     protected void onResume() {
         super.onResume();
@@ -200,10 +244,10 @@ public class GetActivity extends AppCompatActivity {
             int orientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, 1);
             Log.d(TAG, "compressBitmap() called with: orientation = [" + orientation + "]");
 
-            /*switch (orientation) {
+            switch (orientation) {
                 case ExifInterface.ORIENTATION_NORMAL:
                     break;
-                case ExifInterface.ORIENTATION_FLIP_HORIZONTAL:
+                /*case ExifInterface.ORIENTATION_FLIP_HORIZONTAL:
                     matrix.setScale(-1, 1);
                     break;
                 case ExifInterface.ORIENTATION_ROTATE_180:
@@ -216,28 +260,55 @@ public class GetActivity extends AppCompatActivity {
                 case ExifInterface.ORIENTATION_TRANSPOSE:
                     matrix.setRotate(90);
                     matrix.postScale(-1, 1);
-                    break;
+                    break;*/
                 case ExifInterface.ORIENTATION_ROTATE_90:
+                case ExifInterface.ORIENTATION_ROTATE_270:
                     matrix.setRotate(90);
                     break;
-                case ExifInterface.ORIENTATION_TRANSVERSE:
+                /*case ExifInterface.ORIENTATION_TRANSVERSE:
                     matrix.setRotate(-90);
                     matrix.postScale(-1, 1);
-                    break;
-                case ExifInterface.ORIENTATION_ROTATE_270:
-                    matrix.setRotate(-90);
-                    break;
-            }*/
+                    break;*/
+            }
         }
         catch (IOException ignore) { }
 
         Bitmap bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
 
-        int w = bitmap.getWidth();
-        int h = bitmap.getHeight();
+        //bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight());
+
+        //bitmap = Bitmap.createScaledBitmap(bitmap, Methods.getWidthScreen(), Methods.getHeightScreen(), false);
+
+        int widthBitmap = bitmap.getWidth();
+        int heightBitmap = bitmap.getHeight();
+
+        int widthScreen = Methods.getWidthScreen();
+        int heightScreen = Methods.getHeightScreen() - Methods.toPixels(80);
+
+        Log.d(TAG, "compressBitmap() called with: widthBitmap = [" + widthBitmap + "], heightBitmap = [" + heightBitmap + "]");
+        Log.d(TAG, "compressBitmap() called with: widthScreen = [" + widthScreen + "], heightScreen = [" + heightScreen + "]");
+
+        bitmap = Bitmap.createScaledBitmap(bitmap, (widthBitmap * heightScreen) / heightBitmap, heightScreen, false);
+
+        widthBitmap = bitmap.getWidth();
+        heightBitmap = bitmap.getHeight();
+
+        Log.d(TAG, "createScaledBitmap() called with: widthBitmap = [" + widthBitmap + "], heightBitmap = [" + heightBitmap + "]");
+
+        //final int left = (widthBitmap - widthScreen) / 2;
+        final int left = heightScreen / 2 - widthBitmap / 2;
+
+        bitmap = Bitmap.createBitmap(bitmap, 0, 0, widthScreen + ((widthBitmap - widthScreen) / 2), heightScreen);
+
+        widthBitmap = bitmap.getWidth();
+        heightBitmap = bitmap.getHeight();
+
+        Log.d(TAG, "createBitmap() called with: widthBitmap = [" + widthBitmap + "], heightBitmap = [" + heightBitmap + "]");
+
+
 
         final int maxWidth = 1800;
-        float newScale = (float) (maxWidth * 1.0 / w);
+        float newScale = (float) (maxWidth * 1.0 / widthBitmap);
 
         matrix.postScale(newScale, newScale);
 
@@ -246,7 +317,7 @@ public class GetActivity extends AppCompatActivity {
         }
 
         try {
-            return Bitmap.createBitmap(bitmap, 0, 0, w, h, matrix, true);
+            return Bitmap.createBitmap(bitmap, 0, 0, widthBitmap, heightBitmap, matrix, true);
         }
         finally {
             bitmap.recycle();
@@ -347,11 +418,11 @@ public class GetActivity extends AppCompatActivity {
 
     private void executePreview(byte[] data) {
 
-        try {
+        /*try {
             ExifInterface exif = new ExifInterface(new ByteArrayInputStream(data));
             thumbnail.setVisibility(View.VISIBLE);
             thumbnail.setImageBitmap(exif.getThumbnailBitmap());
-        } catch (IOException ignore) { }
+        } catch (IOException ignore) { }*/
 
         new AsyncTask<byte[], Void, Bitmap>() {
 
@@ -373,8 +444,6 @@ public class GetActivity extends AppCompatActivity {
                 controllersAccept.setVisibility(View.VISIBLE);
 
                 preview.setImageBitmap(bitmap);
-                preview.setFixedAspectRatio(cropSquare);
-                preview.setScaleType(CropImageView.ScaleType.FIT_CENTER);
             }
         }.execute(data);
     }
