@@ -61,6 +61,12 @@ abstract class CameraViewImpl {
 
     abstract boolean getAutoFocus();
 
+    /**
+     * @author Brian Salvattore
+     * Method added for force focus mode
+     */
+    abstract void setFocusMode(String focusMode);
+
     abstract void setFlash(int flash);
 
     abstract int getFlash();

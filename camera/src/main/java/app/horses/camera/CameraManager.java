@@ -128,7 +128,7 @@ public class CameraManager {
 
     @IntDef({FORMAT_JPG, FORMAT_PNG, FORMAT_WEBP})
     @Retention(RetentionPolicy.SOURCE)
-    public @interface Format {
+    @interface Format {
     }
 
     @SuppressWarnings("WeakerAccess")

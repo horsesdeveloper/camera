@@ -71,6 +71,8 @@ class Camera1 extends CameraViewImpl {
 
     private int mDisplayOrientation;
 
+    private String mFocusMode;
+
     Camera1(Callback callback, PreviewImpl preview) {
         super(callback, preview);
         preview.setCallback(new PreviewImpl.Callback() {
@@ -200,6 +202,17 @@ class Camera1 extends CameraViewImpl {
         }
         String focusMode = mCameraParameters.getFocusMode();
         return focusMode != null && focusMode.contains("continuous");
+    }
+
+    /**
+     * @author Brian Salvattore
+     * Implementation method for force focus
+     */
+    @Override
+    void setFocusMode(String focusMode) {
+        /*mCameraParameters.setFocusMode(focusMode);
+        mCamera.setParameters(mCameraParameters);*/
+        mFocusMode = focusMode;
     }
 
     @Override
@@ -340,6 +353,9 @@ class Camera1 extends CameraViewImpl {
             mCameraParameters.setRotation(calcCameraRotation(mDisplayOrientation));
             setAutoFocusInternal(mAutoFocus);
             setFlashInternal(mFlash);
+
+            if (mFocusMode != null )mCameraParameters.setFocusMode(mFocusMode);
+
             mCamera.setParameters(mCameraParameters);
             if (mShowingPreview) {
                 mCamera.startPreview();

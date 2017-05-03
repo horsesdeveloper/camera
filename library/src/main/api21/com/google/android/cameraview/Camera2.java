@@ -307,6 +307,15 @@ class Camera2 extends CameraViewImpl {
         return mAutoFocus;
     }
 
+    /**
+     * @author Brian Salvattore
+     * Implementation method for force focus
+     */
+    @Override
+    void setFocusMode(String focusMode) {
+        // TODO: 2/05/2017 implements force focus
+    }
+
     @Override
     void setFlash(int flash) {
         if (mFlash == flash) {

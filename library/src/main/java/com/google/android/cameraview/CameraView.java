@@ -331,6 +331,13 @@ public class CameraView extends FrameLayout {
     }
 
     /**
+     * Force focus mode in deprecated Camera1
+     */
+    public void setFocusMode(String focusMode) {
+        mImpl.setFocusMode(focusMode);
+    }
+
+    /**
      * Gets all the aspect ratios supported by the current camera.
      */
     public Set<AspectRatio> getSupportedAspectRatios() {

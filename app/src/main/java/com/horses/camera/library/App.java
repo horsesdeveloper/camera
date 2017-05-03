@@ -23,7 +23,7 @@ public class App extends Application {
                 new CameraManager.Builder(this)
                     .setPrimaryColor(R.color.colorPrimary)
                     .enableCropView(true)
-                    .enableCropSquare(true)
+                    .enableCropSquare(false)
                     .enableFrontCamera(true)
                     .enableFlash(true)
                     .setQuality(80)

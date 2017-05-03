@@ -5,9 +5,12 @@ import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
+import android.hardware.Camera;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
@@ -23,8 +26,7 @@ import android.view.animation.Interpolator;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 
-/*import com.edmodo.cropper.CropImageView;*/
-import com.google.android.cameraview.AspectRatio;
+import com.github.ybq.android.spinkit.SpinKitView;
 import com.google.android.cameraview.CameraView;
 import com.theartofdev.edmodo.cropper.CropImageView;
 
@@ -37,9 +39,11 @@ import java.util.Date;
 
 import app.horses.camera.CameraManager;
 import app.horses.camera.R;
+import app.horses.camera.util.CameraException;
 import app.horses.camera.util.CameraUtil;
 import app.horses.camera.util.ColorUtils;
-import app.horses.camera.util.Methods;
+
+/*import com.edmodo.cropper.CropImageView;*/
 
 /**
  * @author Brian Salvattore
@@ -54,14 +58,17 @@ public class GetActivity extends AppCompatActivity {
     private static final Interpolator DECELERATE_INTERPOLATOR = new DecelerateInterpolator();
 
     private CameraView cameraView;
-    private ImageView thumbnail;
+    //private ImageView thumbnail;
     private View shutter;
     private CropImageView preview;
     private View controllersCamera;
     private View controllersAccept;
+    private SpinKitView spin;
 
-    private boolean cropView = false;
+    // TODO: 2/05/2017 change local
+    @SuppressWarnings("FieldCanBeLocal")
     private boolean cropSquare = false;
+    private boolean cropView = false;
 
     final private int[] flashModes = new int[] { R.drawable.ic_flash_auto_white_24dp, R.drawable.ic_flash_on_white_24dp, R.drawable.ic_flash_off_white_24dp };
     final private int[] facingModes = new int[] { R.drawable.ic_camera_front_white_24dp, R.drawable.ic_camera_rear_white_24dp };
@@ -80,11 +87,14 @@ public class GetActivity extends AppCompatActivity {
         }
 
         cameraView = (CameraView) findViewById(R.id.cameraView);
-        thumbnail = (ImageView) findViewById(R.id.thumbnail);
+        //thumbnail = (ImageView) findViewById(R.id.thumbnail);
         shutter = findViewById(R.id.shutter);
         preview = (CropImageView) findViewById(R.id.preview);
         controllersCamera = findViewById(R.id.camera);
         controllersAccept = findViewById(R.id.accept);
+        spin = (SpinKitView) findViewById(R.id.spin);
+
+        spin.setColor(ColorUtils.getPrimaryColor());
 
         cropView = CameraManager.isCropView();
         cropSquare = CameraManager.isCropSquare();
@@ -99,105 +109,27 @@ public class GetActivity extends AppCompatActivity {
         cameraView.addCallback(getCameraCallback());
         cameraView.setFacing(facing);
         cameraView.setFlash(flash);
-        //cameraView.setAspectRatio(AspectRatio.of(3, 2));
-        //cameraView.setAdjustViewBounds(true);
+        cameraView.setAutoFocus(true);
+        cameraView.setAdjustViewBounds(true);
+        forceMacroFocusMode();
 
-        findViewById(R.id.take).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                findViewById(R.id.take).setEnabled(false);
-                animateShutter();
-                //cameraView.setAspectRatio(AspectRatio.of(16, 9));
-                //verifyAspectRatio();
-                cameraView.takePicture();
-            }
-        });
+        findViewById(R.id.take).setOnClickListener(getTakeListener());
+        findViewById(R.id.retry).setOnClickListener(getRetryListener());
+        findViewById(R.id.save).setOnClickListener(getSaveListener());
+        findViewById(R.id.facing).setOnClickListener(getFacingListener());
+        findViewById(R.id.flash).setOnClickListener(getFlashListener());
 
-        findViewById(R.id.retry).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                onBackPressed();
-            }
-        });
-
-        findViewById(R.id.save).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                savePhoto(preview.getCroppedImage());
-            }
-        });
-
-        findViewById(R.id.facing).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-
-                facing = facing == CameraView.FACING_BACK ? CameraView.FACING_FRONT : CameraView.FACING_BACK;
-                cameraView.setFacing(facing);
-                int drawable = facing == CameraView.FACING_BACK ? facingModes[1] : facingModes[0];
-                ((ImageButton) v).setImageDrawable(ContextCompat.getDrawable(GetActivity.this, drawable));
-
-                if (CameraManager.isFlash()) findViewById(R.id.flash).setVisibility(facing == CameraView.FACING_BACK ? View.VISIBLE : View.GONE);
-            }
-        });
-
-        findViewById(R.id.flash).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                int drawable;
-                switch (flash) {
-                    case CameraView.FLASH_AUTO:
-                        drawable = flashModes[1];
-                        flash = CameraView.FLASH_ON;
-                        break;
-                    case CameraView.FLASH_ON:
-                        drawable = flashModes[2];
-                        flash = CameraView.FLASH_OFF;
-                        break;
-                    case CameraView.FLASH_OFF:
-                    default:
-                        drawable = flashModes[0];
-                        flash = CameraView.FLASH_AUTO;
-                        break;
-                }
-                cameraView.setFlash(flash);
-                ((ImageButton) v).setImageDrawable(ContextCompat.getDrawable(GetActivity.this, drawable));
-            }
-        });
-    }
-
-    private void verifyAspectRatio() {
-
-        final double screenRatio = round(Methods.getHeightScreen() / (Methods.getWidthScreen() * 1.0), 2);
-        AspectRatio ratio = null;
-
-        for (AspectRatio aspectRatio : cameraView.getSupportedAspectRatios()) {
-
-            final double ar = round(aspectRatio.getX() / (aspectRatio.getY() * 1.0), 2);
-
-            final double result = screenRatio - ar;
-            final double k = 0.1;
-
-            if (result <= k && result >= (k * -1)) {
-                Log.d(TAG, "verifyAspectRatio() called aspectRatio=[" + aspectRatio + "]");
-                ratio = aspectRatio;
-                break;
-            }
+        if (!isFlashEnable()) {
+            findViewById(R.id.flash).setVisibility(View.GONE);
+            findViewById(R.id.flash).setOnClickListener(null);
+            Log.wtf(TAG, "onCreate: ", new CameraException("flash is not support"));
         }
 
-        if (ratio == null) return;
-
-        cameraView.setAspectRatio(ratio);
-
-        Log.d(TAG, "verifyAspectRatio() called ratio=[" + ratio + "]");
-    }
-
-    public static double round(double value, int places) {
-        if (places < 0) throw new IllegalArgumentException();
-
-        long factor = (long) Math.pow(10, places);
-        value = value * factor;
-        long tmp = Math.round(value);
-        return (double) tmp / factor;
+        if (!isFrontCameraEnable()) {
+            findViewById(R.id.facing).setVisibility(View.GONE);
+            findViewById(R.id.facing).setOnClickListener(null);
+            Log.wtf(TAG, "onCreate: ", new CameraException("front camera is not support"));
+        }
     }
 
     @Override
@@ -233,6 +165,12 @@ public class GetActivity extends AppCompatActivity {
                 controllersAccept.setVisibility(View.GONE);
                 break;
         }
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        Log.d(TAG, "onConfigurationChanged() called with: newConfig = [" + newConfig.orientation + "]");
     }
 
     private Bitmap compressBitmap(byte[] data) {
@@ -275,37 +213,14 @@ public class GetActivity extends AppCompatActivity {
 
         Bitmap bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
 
-        //bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight());
-
-        //bitmap = Bitmap.createScaledBitmap(bitmap, Methods.getWidthScreen(), Methods.getHeightScreen(), false);
-
-        int widthBitmap = bitmap.getWidth();
-        int heightBitmap = bitmap.getHeight();
-
-        int widthScreen = Methods.getWidthScreen();
-        int heightScreen = Methods.getHeightScreen() - Methods.toPixels(80);
+        final int widthBitmap = bitmap.getWidth();
+        final int heightBitmap = bitmap.getHeight();
 
         Log.d(TAG, "compressBitmap() called with: widthBitmap = [" + widthBitmap + "], heightBitmap = [" + heightBitmap + "]");
-        Log.d(TAG, "compressBitmap() called with: widthScreen = [" + widthScreen + "], heightScreen = [" + heightScreen + "]");
 
-        bitmap = Bitmap.createScaledBitmap(bitmap, (widthBitmap * heightScreen) / heightBitmap, heightScreen, false);
-
-        widthBitmap = bitmap.getWidth();
-        heightBitmap = bitmap.getHeight();
-
-        Log.d(TAG, "createScaledBitmap() called with: widthBitmap = [" + widthBitmap + "], heightBitmap = [" + heightBitmap + "]");
-
-        //final int left = (widthBitmap - widthScreen) / 2;
-        final int left = heightScreen / 2 - widthBitmap / 2;
-
-        bitmap = Bitmap.createBitmap(bitmap, 0, 0, widthScreen + ((widthBitmap - widthScreen) / 2), heightScreen);
-
-        widthBitmap = bitmap.getWidth();
-        heightBitmap = bitmap.getHeight();
-
-        Log.d(TAG, "createBitmap() called with: widthBitmap = [" + widthBitmap + "], heightBitmap = [" + heightBitmap + "]");
-
-
+        if (widthBitmap > heightBitmap) {
+            matrix.setRotate(90);
+        }
 
         final int maxWidth = 1800;
         float newScale = (float) (maxWidth * 1.0 / widthBitmap);
@@ -386,6 +301,7 @@ public class GetActivity extends AppCompatActivity {
 
             @Override
             protected void onPostExecute(String file) {
+                spin.setVisibility(View.GONE);
 
                 Intent intent = new Intent();
                 intent.putExtra("uri", file);
@@ -406,6 +322,7 @@ public class GetActivity extends AppCompatActivity {
 
             @Override
             protected void onPostExecute(String file) {
+                spin.setVisibility(View.GONE);
 
                 Intent intent = new Intent();
                 intent.putExtra("uri", file);
@@ -417,13 +334,6 @@ public class GetActivity extends AppCompatActivity {
     }
 
     private void executePreview(byte[] data) {
-
-        /*try {
-            ExifInterface exif = new ExifInterface(new ByteArrayInputStream(data));
-            thumbnail.setVisibility(View.VISIBLE);
-            thumbnail.setImageBitmap(exif.getThumbnailBitmap());
-        } catch (IOException ignore) { }*/
-
         new AsyncTask<byte[], Void, Bitmap>() {
 
             @Override
@@ -435,9 +345,10 @@ public class GetActivity extends AppCompatActivity {
             protected void onPostExecute(Bitmap bitmap) {
                 step = 1;
 
+                spin.setVisibility(View.GONE);
                 findViewById(R.id.take).setEnabled(true);
 
-                thumbnail.setVisibility(View.GONE);
+                //thumbnail.setVisibility(View.GONE);
                 preview.setVisibility(View.VISIBLE);
 
                 controllersCamera.setVisibility(View.GONE);
@@ -473,7 +384,7 @@ public class GetActivity extends AppCompatActivity {
         animatorSet.start();
     }
 
-    public CameraView.Callback getCameraCallback() {
+    private CameraView.Callback getCameraCallback() {
         return new CameraView.Callback() {
             @Override
             public void onPictureTaken(final CameraView cameraView, final byte[] data) {
@@ -483,6 +394,95 @@ public class GetActivity extends AppCompatActivity {
                 else {
                     savePhotoWithoutPreview(data);
                 }
+            }
+        };
+    }
+
+    @SuppressWarnings("deprecation")
+    private int getNumberOfCameras() {
+        return Camera.getNumberOfCameras();
+    }
+
+    private boolean isFlashEnable() {
+        return getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA_FLASH);
+    }
+
+    private boolean isFrontCameraEnable() {
+        return getNumberOfCameras() == 2;
+    }
+
+    @SuppressWarnings("deprecation")
+    private void forceMacroFocusMode() {
+        cameraView.setFocusMode(Camera.Parameters.FOCUS_MODE_MACRO);
+    }
+
+    private View.OnClickListener getFacingListener() {
+        return new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                facing = facing == CameraView.FACING_BACK ? CameraView.FACING_FRONT : CameraView.FACING_BACK;
+                cameraView.setFacing(facing);
+                int drawable = facing == CameraView.FACING_BACK ? facingModes[1] : facingModes[0];
+                ((ImageButton) v).setImageDrawable(ContextCompat.getDrawable(GetActivity.this, drawable));
+
+                if (CameraManager.isFlash()) findViewById(R.id.flash).setVisibility(facing == CameraView.FACING_BACK ? View.VISIBLE : View.GONE);
+            }
+        };
+    }
+
+    private View.OnClickListener getFlashListener() {
+        return new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                int drawable;
+                switch (flash) {
+                    case CameraView.FLASH_AUTO:
+                        drawable = flashModes[1];
+                        flash = CameraView.FLASH_ON;
+                        break;
+                    case CameraView.FLASH_ON:
+                        drawable = flashModes[2];
+                        flash = CameraView.FLASH_OFF;
+                        break;
+                    case CameraView.FLASH_OFF:
+                    default:
+                        drawable = flashModes[0];
+                        flash = CameraView.FLASH_AUTO;
+                        break;
+                }
+                cameraView.setFlash(flash);
+                ((ImageButton) v).setImageDrawable(ContextCompat.getDrawable(GetActivity.this, drawable));
+            }
+        };
+    }
+
+    private View.OnClickListener getTakeListener() {
+        return new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                spin.setVisibility(View.VISIBLE);
+                findViewById(R.id.take).setEnabled(false);
+                animateShutter();
+                cameraView.takePicture();
+            }
+        };
+    }
+
+    private View.OnClickListener getSaveListener() {
+        return new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                spin.setVisibility(View.VISIBLE);
+                savePhoto(preview.getCroppedImage());
+            }
+        };
+    }
+
+    private View.OnClickListener getRetryListener() {
+        return new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                onBackPressed();
             }
         };
     }
