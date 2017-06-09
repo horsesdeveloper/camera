@@ -116,6 +116,8 @@ public class TakeActivity extends AppCompatActivity implements SurfaceHolder.Cal
     private String folderPath;
     private String fileName;
 
+    private static  final int FOCUS_AREA_SIZE= 300;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -231,8 +233,6 @@ public class TakeActivity extends AppCompatActivity implements SurfaceHolder.Cal
 
                     case MotionEvent.ACTION_MOVE:
                         if (mode == FOCUS) {
-
-                            // FIXME: 12/10/2016 in old method this line is deprecated
                             pointFocus((int) event.getRawX(), (int) event.getRawY());
                         } else if (mode == ZOOM) {
 
@@ -450,30 +450,32 @@ public class TakeActivity extends AppCompatActivity implements SurfaceHolder.Cal
             @SuppressWarnings("deprecation")
             @Override
             public void run() {
-                try {
 
-                    sleep(100);
-                }
-                catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                if (camera == null) {
 
-                    return;
-                }
 
-                camera.autoFocus(new Camera.AutoFocusCallback() {
-                    @Override
-                    public void onAutoFocus(boolean success, Camera camera) {
 
-                        if (success) {
-
-                            initCamera();
-                        }
-                    }
-                });
             }
         };
+
+        try
+        {
+            if (camera == null) {
+                return;
+            }
+            camera.autoFocus(new Camera.AutoFocusCallback() {
+                @Override
+                public void onAutoFocus(boolean success, Camera camera) {
+
+                    if (success) {
+
+                        initCamera();
+                    }
+                }
+            });
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private void initCamera() {
@@ -741,11 +743,11 @@ public class TakeActivity extends AppCompatActivity implements SurfaceHolder.Cal
 
         List<String> focusModes = parameters.getSupportedFocusModes();
 
-        if (focusModes.contains(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE))
+        if (focusModes.contains(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE)){
             mode = Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE;
-         /*else if (focusModes.contains(Camera.Parameters.FOCUS_MODE_MACRO))
-             mode = Camera.Parameters.FOCUS_MODE_MACRO;*/
-
+        } else if (focusModes.contains(Camera.Parameters.FOCUS_MODE_AUTO)){
+            mode = Camera.Parameters.FOCUS_MODE_AUTO;
+        }
         return mode;
     }
 
@@ -843,7 +845,7 @@ public class TakeActivity extends AppCompatActivity implements SurfaceHolder.Cal
 
     private void showPoint(Camera.Parameters parameters, int x, int y) {
 
-        if (parameters.getMaxNumMeteringAreas() > 0) {
+        /*if (parameters.getMaxNumMeteringAreas() > 0) {
 
             List<Camera.Area> areas = new ArrayList<>();
 
@@ -861,8 +863,45 @@ public class TakeActivity extends AppCompatActivity implements SurfaceHolder.Cal
             parameters.setMeteringAreas(areas);
         }
 
-        parameters.setFocusMode(getFocusMode(parameters));
+        parameters.setFocusMode(getFocusMode(parameters));*/
+
+        if (camera != null ) {
+            if (parameters.getMaxNumMeteringAreas() > 0){
+                Log.i(TAG,"fancy !");
+                Rect rect = calculateFocusArea(x, y);
+
+                parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
+                List<Camera.Area> meteringAreas = new ArrayList<Camera.Area>();
+                meteringAreas.add(new Camera.Area(rect, 800));
+                parameters.setFocusAreas(meteringAreas);
+
+                camera.setParameters(parameters);
+            }
+        }
+
     }
+
+    private Rect calculateFocusArea(float x, float y) {
+        int left = clamp(Float.valueOf((x / surface.getWidth()) * 2000 - 1000).intValue(), FOCUS_AREA_SIZE);
+        int top = clamp(Float.valueOf((y / surface.getHeight()) * 2000 - 1000).intValue(), FOCUS_AREA_SIZE);
+
+        return new Rect(left, top, left + FOCUS_AREA_SIZE, top + FOCUS_AREA_SIZE);
+    }
+
+    private int clamp(int touchCoordinateInCameraReper, int focusAreaSize) {
+        int result;
+        if (Math.abs(touchCoordinateInCameraReper)+focusAreaSize/2>1000){
+            if (touchCoordinateInCameraReper>0){
+                result = 1000 - focusAreaSize/2;
+            } else {
+                result = -1000 + focusAreaSize/2;
+            }
+        } else{
+            result = touchCoordinateInCameraReper - focusAreaSize/2;
+        }
+        return result;
+    }
+
 
     private void animateShutter() {
 
