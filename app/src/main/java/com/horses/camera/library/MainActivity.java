@@ -12,6 +12,7 @@ import android.widget.ImageView;
 import com.squareup.picasso.Picasso;
 
 import java.io.File;
+import java.util.Date;
 
 import app.horses.camera.CameraManager;
 import app.horses.camera.CallbackManager;
@@ -42,11 +43,11 @@ public class MainActivity extends AppCompatActivity implements CallbackView {
         //CameraManager.openCamera(this,dirBase.getPath());
 
         // Custom path and filename without extension
-        //CameraManager.openCamera(this,dirBase.getPath(),"MyPhoto");
+        CameraManager.openCamera(this,dirBase.getPath(),"MyPhoto_"+new Date().getTime());
 
 
         //Open from gallery
-        CameraManager.openGallery(this);
+        //CameraManager.openGallery(this);
 
         callbackManager.setCallback(this);
 

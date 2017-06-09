@@ -261,10 +261,10 @@ public class TakeActivity extends AppCompatActivity implements SurfaceHolder.Cal
             public void onClick(View v) {
 
                 try {
-
-                    pointFocus((int) pointX, (int) pointY);
-                    showRipple((int) pointX, (int) pointY);
-
+                    if(camera!=null){
+                        pointFocus((int) pointX, (int) pointY);
+                        showRipple((int) pointX, (int) pointY);
+                    }
                 } catch (Exception e) {
 
                     e.printStackTrace();
@@ -400,7 +400,8 @@ public class TakeActivity extends AppCompatActivity implements SurfaceHolder.Cal
                 controllersCamera.setVisibility(View.VISIBLE);
                 controllersAccept.setVisibility(View.GONE);
 
-                initCamera();
+                surface.getHolder().removeCallback(TakeActivity.this);
+                surfaceCreated(surface.getHolder());
                 break;
         }
     }
@@ -505,7 +506,11 @@ public class TakeActivity extends AppCompatActivity implements SurfaceHolder.Cal
     private void previewPicture() {
         camera.takePicture(null, null, new Camera.PictureCallback() {
             @Override
-            public void onPictureTaken(final byte[] bytes, Camera camera) {
+            public void onPictureTaken(final byte[] bytes, Camera camera1) {
+                camera.stopPreview();
+                camera.release();
+                camera = null;
+
                 new PreviewImageTask().execute(bytes);
             }
         });
@@ -823,13 +828,12 @@ public class TakeActivity extends AppCompatActivity implements SurfaceHolder.Cal
     }
 
     private void pointFocus(int x, int y) {
-
-        camera.cancelAutoFocus();
-        Camera.Parameters parameters = camera.getParameters();
-
-        showPoint(parameters, x, y);
-
         try {
+            camera.cancelAutoFocus();
+            Camera.Parameters parameters = camera.getParameters();
+
+            showPoint(parameters, x, y);
+
             camera.setParameters(parameters);
         } catch (Exception e) {
             Log.wtf(TAG, "pointFocus: ", e);
