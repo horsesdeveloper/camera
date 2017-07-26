@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">Camera</string>
+    <string name="dialog.loading">Procesando&#8230;</string>
+    <string name="title.cropper">Cortar foto</string>
+    <string name="title.check">Cortar</string>
+    <string name="title.retry">Reintentar</string>
+    <string name="title.save">Guardar</string>
+    <string name="error.camera">Error en la cámara</string>
+</resources>
