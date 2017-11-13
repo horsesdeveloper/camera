@@ -16,6 +16,8 @@ public class Constants {
 
     public static final String EXTRA_FOLDER_PATH = "folderPath";
     public static final String EXTRA_FILENAME_PATH = "fileNamePath";
+    public static final String EXTRA_QR_SCAN_ENABLED = "QRScanEnabled";
+    public static final String EXTRA_QR_SCAN_LAYOUT = "QRScanELayout";
 
     private static final String TAG = Constants.class.getSimpleName();
 }

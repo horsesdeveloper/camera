@@ -18,6 +18,8 @@ import android.hardware.Camera;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.support.annotation.IntegerRes;
+import android.support.annotation.LayoutRes;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.MotionEvent;
@@ -31,6 +33,9 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 
+import com.google.zxing.BarcodeFormat;
+import com.google.zxing.integration.android.IntentIntegrator;
+import com.google.zxing.integration.android.IntentResult;
 import com.theartofdev.edmodo.cropper.CropImageView;
 
 import java.io.File;
@@ -56,6 +61,9 @@ import pub.devrel.easypermissions.EasyPermissions;
 
 import static app.horses.camera.util.Constants.EXTRA_FILENAME_PATH;
 import static app.horses.camera.util.Constants.EXTRA_FOLDER_PATH;
+import static app.horses.camera.util.Constants.EXTRA_QR_SCAN_ENABLED;
+import static app.horses.camera.util.Constants.EXTRA_QR_SCAN_LAYOUT;
+import static app.horses.camera.util.Constants.REQUEST_TAKE;
 import static app.horses.camera.util.Constants.RESULT_ERROR;
 
 @SuppressWarnings("deprecation")
@@ -115,6 +123,8 @@ public class TakeActivity extends AppCompatActivity implements SurfaceHolder.Cal
 
     private String folderPath;
     private String fileName;
+    private boolean QRScanEnabled;
+    private @LayoutRes int QRScanLayout;
 
     private static  final int FOCUS_AREA_SIZE= 300;
 
@@ -131,199 +141,227 @@ public class TakeActivity extends AppCompatActivity implements SurfaceHolder.Cal
             fileName = intent.getStringExtra(EXTRA_FILENAME_PATH);
         }
 
+        if (intent.hasExtra(EXTRA_QR_SCAN_ENABLED)) {
+            QRScanEnabled = intent.getBooleanExtra(EXTRA_QR_SCAN_ENABLED, false);
+        }
+
+        if (intent.hasExtra(EXTRA_QR_SCAN_LAYOUT)) {
+            QRScanLayout = intent.getIntExtra(EXTRA_QR_SCAN_LAYOUT, 0);
+        }
+
         methodRequirePermissions();
     }
 
     private void initActivity(){
-        setContentView(R.layout.activity_take);
+        if(!QRScanEnabled) {
+            setContentView(R.layout.activity_take);
 
-        // TODO: 18/11/2016 transparent status bar
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            // TODO: 18/11/2016 transparent status bar
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             /*getWindow().addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
             getWindow().getDecorView().setSystemUiVisibility(
                     View.SYSTEM_UI_FLAG_LAYOUT_STABLE
                             | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN);
             getWindow().setStatusBarColor(Color.TRANSPARENT);*/
-            getWindow().setStatusBarColor(CameraUtil.darkenColor(ColorUtils.getPrimaryColor()));
-        }
+                getWindow().setStatusBarColor(CameraUtil.darkenColor(ColorUtils.getPrimaryColor()));
+            }
 
-        //Prevent screen change
-        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+            //Prevent screen change
+            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
 
-        if (CameraManager.getInstance() != null) {
-            isCropEnabled = CameraManager.getInstance().getBuilder().isCropEnabled();
-        }
+            if (CameraManager.getInstance() != null) {
+                isCropEnabled = CameraManager.getInstance().getBuilder().isCropEnabled();
+            }
 
-        if (CameraManager.getInstance() != null) {
-            isSquare = CameraManager.getInstance().getBuilder().isCropSquare();
-        }
+            if (CameraManager.getInstance() != null) {
+                isSquare = CameraManager.getInstance().getBuilder().isCropSquare();
+            }
 
-        surface = (SurfaceView) findViewById(R.id.surface);
-        layout = (LinearLayout) findViewById(R.id.layout);
-        take = (ImageView) findViewById(R.id.take);
-        preview = (CropImageView) findViewById(R.id.preview);
-        shutter = findViewById(R.id.shutter);
-        ripple = findViewById(R.id.ripple);
-        controllersCamera = findViewById(R.id.camera);
-        controllersAccept = findViewById(R.id.accept);
-        retry = (Button) findViewById(R.id.retry);
-        save = (Button) findViewById(R.id.save);
+            surface = (SurfaceView) findViewById(R.id.surface);
+            layout = (LinearLayout) findViewById(R.id.layout);
+            take = (ImageView) findViewById(R.id.take);
+            preview = (CropImageView) findViewById(R.id.preview);
+            shutter = findViewById(R.id.shutter);
+            ripple = findViewById(R.id.ripple);
+            controllersCamera = findViewById(R.id.camera);
+            controllersAccept = findViewById(R.id.accept);
+            retry = (Button) findViewById(R.id.retry);
+            save = (Button) findViewById(R.id.save);
 
-        layout.setBackgroundColor(ColorUtils.getPrimaryColor());
+            layout.setBackgroundColor(ColorUtils.getPrimaryColor());
 
-        //Camera controls customization
-        if (CameraManager.getInstance() != null) {
-            CameraManager.Builder cameraBuilder=CameraManager.getInstance().getBuilder();
+            //Camera controls customization
+            if (CameraManager.getInstance() != null) {
+                CameraManager.Builder cameraBuilder = CameraManager.getInstance().getBuilder();
 
-            String retryText=cameraBuilder.getRetryText();
-            retry.setText(retryText);
-            retry.setTransformationMethod(null);
+                String retryText = cameraBuilder.getRetryText();
+                retry.setText(retryText);
+                retry.setTransformationMethod(null);
 
-            String saveText = cameraBuilder.getSaveText();
-            save.setText(saveText);
-            save.setTransformationMethod(null);
+                String saveText = cameraBuilder.getSaveText();
+                save.setText(saveText);
+                save.setTransformationMethod(null);
 
-            take.setImageResource(cameraBuilder.getIconCaptureIcon());
+                take.setImageResource(cameraBuilder.getIconCaptureIcon());
 
-            isSquare = CameraManager.getInstance().getBuilder().isCropSquare();
-        }
+                isSquare = CameraManager.getInstance().getBuilder().isCropSquare();
+            }
 
 
-        width = Methods.getWidthScreen();
-        height = Methods.getHeightScreen() - Methods.toPixels(80);
-        Log.d(TAG, "onCreate() called with: width = [" + width + "], height = [" + height + "]");
+            width = Methods.getWidthScreen();
+            height = Methods.getHeightScreen() - Methods.toPixels(80);
+            Log.d(TAG, "onCreate() called with: width = [" + width + "], height = [" + height + "]");
 
-        holder = surface.getHolder();
-        holder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
-        holder.setKeepScreenOn(true);
+            holder = surface.getHolder();
+            holder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
+            holder.setKeepScreenOn(true);
 
-        surface.setFocusable(true);
-        surface.setBackgroundColor(TRIM_MEMORY_BACKGROUND);
-        surface.getHolder().addCallback(this);
+            surface.setFocusable(true);
+            surface.setBackgroundColor(TRIM_MEMORY_BACKGROUND);
+            surface.getHolder().addCallback(this);
 
-        //region surface listeners
-        surface.setOnTouchListener(new View.OnTouchListener() {
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
+            //region surface listeners
+            surface.setOnTouchListener(new View.OnTouchListener() {
+                @Override
+                public boolean onTouch(View v, MotionEvent event) {
 
-                switch (event.getAction() & MotionEvent.ACTION_MASK) {
+                    switch (event.getAction() & MotionEvent.ACTION_MASK) {
 
-                    case MotionEvent.ACTION_DOWN:
+                        case MotionEvent.ACTION_DOWN:
 
-                        pointX = event.getX();
-                        pointY = event.getY();
-                        mode = FOCUS;
-                        break;
+                            pointX = event.getX();
+                            pointY = event.getY();
+                            mode = FOCUS;
+                            break;
 
-                    case MotionEvent.ACTION_POINTER_DOWN:
+                        case MotionEvent.ACTION_POINTER_DOWN:
 
-                        dist = spacing(event);
+                            dist = spacing(event);
 
-                        if (spacing(event) > 10f) {
+                            if (spacing(event) > 10f) {
 
-                            mode = ZOOM;
-                        }
-                        break;
-
-                    case MotionEvent.ACTION_UP:
-                    case MotionEvent.ACTION_POINTER_UP:
-
-                        mode = FOCUS;
-                        break;
-
-                    case MotionEvent.ACTION_MOVE:
-                        if (mode == FOCUS) {
-                            pointFocus((int) event.getRawX(), (int) event.getRawY());
-                        } else if (mode == ZOOM) {
-
-                            float newDist = spacing(event);
-
-                            if (newDist > 10f) {
-
-                                float tScale = (newDist - dist) / dist;
-
-                                if (tScale < 0) {
-
-                                    tScale = tScale * 10;
-                                }
-
-                                addZoomIn((int) tScale);
+                                mode = ZOOM;
                             }
+                            break;
+
+                        case MotionEvent.ACTION_UP:
+                        case MotionEvent.ACTION_POINTER_UP:
+
+                            mode = FOCUS;
+                            break;
+
+                        case MotionEvent.ACTION_MOVE:
+                            if (mode == FOCUS) {
+                                pointFocus((int) event.getRawX(), (int) event.getRawY());
+                            } else if (mode == ZOOM) {
+
+                                float newDist = spacing(event);
+
+                                if (newDist > 10f) {
+
+                                    float tScale = (newDist - dist) / dist;
+
+                                    if (tScale < 0) {
+
+                                        tScale = tScale * 10;
+                                    }
+
+                                    addZoomIn((int) tScale);
+                                }
+                            }
+                            break;
+                    }
+                    return false;
+                }
+            });
+
+            surface.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+
+                    try {
+                        if (camera != null) {
+                            pointFocus((int) pointX, (int) pointY);
+                            showRipple((int) pointX, (int) pointY);
                         }
-                        break;
-                }
-                return false;
-            }
-        });
+                    } catch (Exception e) {
 
-        surface.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-
-                try {
-                    if(camera!=null){
-                        pointFocus((int) pointX, (int) pointY);
-                        showRipple((int) pointX, (int) pointY);
+                        e.printStackTrace();
                     }
-                } catch (Exception e) {
-
-                    e.printStackTrace();
                 }
-            }
-        });
-        //endregion
+            });
+            //endregion
 
-        take.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                animateShutter();
-                previewPicture();
-            }
-        });
-
-        save.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-
-                Bitmap bitmapToSave=null;
-                if(isCropEnabled){
-                    bitmapToSave = preview.getCroppedImage();
-                } else {
-                    bitmapToSave=saveBitmap;
+            take.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    animateShutter();
+                    previewPicture();
                 }
+            });
 
-                File filesDir;
-                if(folderPath!=null){
-                    filesDir = new File(folderPath);
+            save.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
 
-                    //Create folder if not Exists
-                    if(!filesDir.exists()){
-                        filesDir.mkdirs();
+                    Bitmap bitmapToSave = null;
+                    if (isCropEnabled) {
+                        bitmapToSave = preview.getCroppedImage();
+                    } else {
+                        bitmapToSave = saveBitmap;
                     }
-                } else {
-                    filesDir = getFilesDir();
+
+                    File filesDir;
+                    if (folderPath != null) {
+                        filesDir = new File(folderPath);
+
+                        //Create folder if not Exists
+                        if (!filesDir.exists()) {
+                            filesDir.mkdirs();
+                        }
+                    } else {
+                        filesDir = getFilesDir();
+                    }
+
+                    File f = persistImage(bitmapToSave, filesDir);
+
+                    Log.i(TAG, "file size: " + (f.length() / 1024) + "kb");
+
+                    Intent intent = new Intent();
+                    intent.putExtra("uri", f.getPath());
+
+                    setResult(RESULT_OK, intent);
+                    finish();
+
+                    bitmapToSave.recycle();
                 }
+            });
 
-                File f = persistImage(bitmapToSave,filesDir);
+            retry.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    onBackPressed();
+                }
+            });
+        } else {
+            Intent intent = new Intent(this, QRTakeActivity.class);
+            intent.putExtra(Constants.EXTRA_QR_SCAN_LAYOUT, QRScanLayout);
+            this.startActivityForResult(intent, REQUEST_TAKE);
+        }
+    }
 
-                Log.i(TAG, "file size: " + (f.length() / 1024) + "kb");
-
-                Intent intent = new Intent();
-                intent.putExtra("uri", f.getPath());
-
-                setResult(RESULT_OK, intent);
-                finish();
-
-                bitmapToSave.recycle();
-            }
-        });
-
-        retry.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                onBackPressed();
-            }
-        });
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if(resultCode == RESULT_OK && data.hasExtra("scan")) {
+            setResult(RESULT_OK, data);
+            finish();
+        } else if(resultCode == RESULT_CANCELED) {
+            setResult(RESULT_CANCELED, data);
+            finish();
+        } else {
+            // This is important, otherwise the result will not be passed to the fragment
+            super.onActivityResult(requestCode, resultCode, data);
+        }
     }
 
     private File persistImage(Bitmap bitmap, File filesDir) {

@@ -30,6 +30,12 @@ dependencies {
 
     //Add permissions Android Version > 6
     compile 'pub.devrel:easypermissions:0.2.1'
+
+    // QR Scan
+//    compile 'com.embarkmobile:zxing-android-minimal:2.0.0@aar'
+//    compile 'com.embarkmobile:zxing-android-integration:2.0.0@aar'
+    compile 'com.journeyapps:zxing-android-embedded:3.5.0'
+    compile 'com.google.zxing:core:3.0.1'
 }
 
 apply from: '../camera.gradle'

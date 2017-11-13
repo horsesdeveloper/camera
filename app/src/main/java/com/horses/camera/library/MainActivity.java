@@ -4,11 +4,14 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Environment;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.Toast;
+
 import com.squareup.picasso.Picasso;
 
 import java.io.File;
@@ -27,6 +30,8 @@ public class MainActivity extends AppCompatActivity implements CallbackView {
 
     private ImageView image;
 
+    private boolean QRCodeEnabled = false;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -43,8 +48,11 @@ public class MainActivity extends AppCompatActivity implements CallbackView {
         //CameraManager.openCamera(this,dirBase.getPath());
 
         // Custom path and filename without extension
-        CameraManager.openCamera(this,dirBase.getPath(),"MyPhoto_"+new Date().getTime());
+        // CameraManager.openCamera(this,dirBase.getPath(),"MyPhoto_"+new Date().getTime());
 
+        // Open QR Code Scan with custom layout
+        QRCodeEnabled = true;
+        CameraManager.openQRCamera(this, R.layout.qr_layout_test);
 
         //Open from gallery
         //CameraManager.openGallery(this);
@@ -68,11 +76,15 @@ public class MainActivity extends AppCompatActivity implements CallbackView {
 
     @Override
     public void successCamera(String path) {
-        Log.i(TAG, "successCamera: " + path);
+        if(!QRCodeEnabled) {
+            Log.i(TAG, "successCamera: " + path);
 
-        path = "file:///" + path;
+            path = "file:///" + path;
 
-        Picasso.with(context).load(path).into(image);
+            Picasso.with(context).load(path).into(image);
+        } else {
+            Toast.makeText(context, "SCANNED QR: " + path, Toast.LENGTH_LONG).show();
+        }
     }
 
     @Override

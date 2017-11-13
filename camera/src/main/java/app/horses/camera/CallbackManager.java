@@ -37,8 +37,20 @@ public class CallbackManager  {
             switch (resultCode) {
 
                 case RESULT_OK:
-                    String path = data.getStringExtra("uri");
-                    callback.successCamera(path);
+                    String path = null;
+                    String scan = null;
+                    if(data.hasExtra("uri")) {
+                        path = data.getStringExtra("uri");
+                    } else if (data.hasExtra("scan")){
+                        scan = data.getStringExtra("scan");
+                    }
+                    if (path != null) {
+                        callback.successCamera(path);
+                    } else if (scan != null) {
+                        callback.successCamera(scan);
+                    } else {
+                        callback.errorCamera();
+                    }
                     break;
                 case RESULT_CANCELED:
                     callback.cancelCamera();

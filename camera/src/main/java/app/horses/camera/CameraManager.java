@@ -6,7 +6,11 @@ import android.content.Context;
 import android.content.Intent;
 import android.support.annotation.ColorRes;
 import android.support.annotation.DrawableRes;
+import android.support.annotation.LayoutRes;
 import android.support.annotation.StringRes;
+import android.support.v7.app.AlertDialog;
+
+import com.google.zxing.integration.android.IntentIntegrator;
 
 import app.horses.camera.ui.activity.TakeActivity;
 import app.horses.camera.util.Constants;
@@ -55,9 +59,22 @@ public class CameraManager {
     }
 
     public static void openCamera(Activity activity, String path, String filename) {
-        Intent intent=new Intent(activity, TakeActivity.class);
-        intent.putExtra(Constants.EXTRA_FOLDER_PATH,path);
-        intent.putExtra(Constants.EXTRA_FILENAME_PATH,filename);
+        openCamera(activity, path, filename, false, 0);
+    }
+
+    public static void openQRCamera(Activity activity, @LayoutRes int QRCodeScanLayout) {
+        openCamera(activity, null, null, true, QRCodeScanLayout);
+    }
+
+    private static void openCamera(Activity activity, String path, String filename, boolean QRCodeScanEnabled, @LayoutRes int QRCodeScanLayout) {
+        Intent intent = new Intent(activity, TakeActivity.class);
+        if(QRCodeScanEnabled) {
+            intent.putExtra(Constants.EXTRA_QR_SCAN_ENABLED, true);
+            intent.putExtra(Constants.EXTRA_QR_SCAN_LAYOUT, QRCodeScanLayout);
+        } else {
+            intent.putExtra(Constants.EXTRA_FOLDER_PATH, path);
+            intent.putExtra(Constants.EXTRA_FILENAME_PATH, filename);
+        }
         activity.startActivityForResult(intent, REQUEST_TAKE);
     }
 
@@ -97,6 +114,8 @@ public class CameraManager {
         protected boolean cropSquare = false;
         protected boolean gallery = false;
         protected boolean frontCamera = false;
+
+        protected boolean QRCodeScan = false;
 
         protected Application application;
 
@@ -154,6 +173,11 @@ public class CameraManager {
             return this;
         }
 
+        public Builder enableQRCodeScan(boolean QRCodeScan) {
+            this.QRCodeScan = QRCodeScan;
+            return this;
+        }
+
         public CameraManager build() {
             return new CameraManager(this);
         }
@@ -184,6 +208,14 @@ public class CameraManager {
 
         public String getSaveText() {
             return saveText;
+        }
+
+        public boolean isQRCodeScan() {
+            return QRCodeScan;
+        }
+
+        public void setQRCodeScan(boolean QRCodeScan) {
+            this.QRCodeScan = QRCodeScan;
         }
     }
 }
