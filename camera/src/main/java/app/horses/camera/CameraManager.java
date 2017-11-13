@@ -43,6 +43,9 @@ public class CameraManager {
                 .build();
     }
 
+    public static void openCamera(Context context) {
+        ((Activity)context).startActivityForResult(new Intent(context, TakeActivity.class), REQUEST_TAKE);
+    }
 
     public static void openCamera(Activity activity) {
         activity.startActivityForResult(new Intent(activity, TakeActivity.class), REQUEST_TAKE);
