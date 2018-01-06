@@ -32,7 +32,9 @@ public class App extends Application {
                         .setCaptureIcon(R.drawable.custom_shutter)
                         .setSaveText("Guardar")
                         .setRetryText("Nueva")
-                        .enableCrop(false)
+                        .enableCropSquare(false)
+                        .enableCrop(true)
+                        .enableFrontCamera(true)
                         .build());
     }
 }

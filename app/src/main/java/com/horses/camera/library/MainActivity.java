@@ -45,14 +45,14 @@ public class MainActivity extends AppCompatActivity implements CallbackView {
         File dirBase=new File(root, "horsesCamera");
 
         // Custom Path
-        //CameraManager.openCamera(this,dirBase.getPath());
+        CameraManager.openCamera(this,dirBase.getPath());
 
         // Custom path and filename without extension
         // CameraManager.openCamera(this,dirBase.getPath(),"MyPhoto_"+new Date().getTime());
 
         // Open QR Code Scan with custom layout
         QRCodeEnabled = true;
-        CameraManager.openQRCamera(this, R.layout.qr_layout_test);
+        //CameraManager.openQRCamera(this, R.layout.qr_layout_test);
 
         //Open from gallery
         //CameraManager.openGallery(this);

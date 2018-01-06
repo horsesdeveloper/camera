@@ -5,6 +5,7 @@ import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
+import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
@@ -23,6 +24,7 @@ import android.support.annotation.LayoutRes;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.MotionEvent;
+import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
@@ -71,7 +73,7 @@ public class TakeActivity extends AppCompatActivity implements SurfaceHolder.Cal
         EasyPermissions.PermissionCallbacks {
 
     private static final String TAG = TakeActivity.class.getSimpleName();
-    private static final int RC_WRITESD_PERMISSIONS_REQUIRED =101;
+    private static final int RC_WRITESD_PERMISSIONS_REQUIRED = 101;
 
     private static final int PHOTO_SIZE = 1200;
     private static final int MIN_PREVIEW_PIXELS = 480 * 320;
@@ -96,6 +98,7 @@ public class TakeActivity extends AppCompatActivity implements SurfaceHolder.Cal
 
     private boolean isCropEnabled = false;
     private boolean isSquare = false;
+    private boolean isFrontCameraEnabled = false;
 
     private int step = 0;
 
@@ -116,6 +119,7 @@ public class TakeActivity extends AppCompatActivity implements SurfaceHolder.Cal
     private Bitmap saveBitmap = null;
 
     private Camera camera;
+    private Camera.CameraInfo cameraInfo;
     private SurfaceHolder holder;
 
     private int width = 0;
@@ -124,9 +128,10 @@ public class TakeActivity extends AppCompatActivity implements SurfaceHolder.Cal
     private String folderPath;
     private String fileName;
     private boolean QRScanEnabled;
-    private @LayoutRes int QRScanLayout;
+    private @LayoutRes
+    int QRScanLayout;
 
-    private static  final int FOCUS_AREA_SIZE= 300;
+    private static final int FOCUS_AREA_SIZE = 300;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -152,8 +157,8 @@ public class TakeActivity extends AppCompatActivity implements SurfaceHolder.Cal
         methodRequirePermissions();
     }
 
-    private void initActivity(){
-        if(!QRScanEnabled) {
+    private void initActivity() {
+        if (!QRScanEnabled) {
             setContentView(R.layout.activity_take);
 
             // TODO: 18/11/2016 transparent status bar
@@ -171,11 +176,10 @@ public class TakeActivity extends AppCompatActivity implements SurfaceHolder.Cal
 
             if (CameraManager.getInstance() != null) {
                 isCropEnabled = CameraManager.getInstance().getBuilder().isCropEnabled();
+                isSquare = CameraManager.getInstance().getBuilder().isCropSquare();
+                isFrontCameraEnabled = CameraManager.getInstance().getBuilder().isFrontCamera();
             }
 
-            if (CameraManager.getInstance() != null) {
-                isSquare = CameraManager.getInstance().getBuilder().isCropSquare();
-            }
 
             surface = (SurfaceView) findViewById(R.id.surface);
             layout = (LinearLayout) findViewById(R.id.layout);
@@ -352,10 +356,10 @@ public class TakeActivity extends AppCompatActivity implements SurfaceHolder.Cal
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if(resultCode == RESULT_OK && data.hasExtra("scan")) {
+        if (resultCode == RESULT_OK && data.hasExtra("scan")) {
             setResult(RESULT_OK, data);
             finish();
-        } else if(resultCode == RESULT_CANCELED) {
+        } else if (resultCode == RESULT_CANCELED) {
             setResult(RESULT_CANCELED, data);
             finish();
         } else {
@@ -366,11 +370,11 @@ public class TakeActivity extends AppCompatActivity implements SurfaceHolder.Cal
 
     private File persistImage(Bitmap bitmap, File filesDir) {
 
-        String name="";
-        if(fileName!=null){
-            name = String.format(filesDir  + "/%s.jpg", fileName);
+        String name = "";
+        if (fileName != null) {
+            name = String.format(filesDir + "/%s.jpg", fileName);
         } else {
-            name = String.format(filesDir  + "/%s.jpg", new Date().getTime());
+            name = String.format(filesDir + "/%s.jpg", new Date().getTime());
         }
 
         File imageFile = new File(name);
@@ -405,10 +409,10 @@ public class TakeActivity extends AppCompatActivity implements SurfaceHolder.Cal
 
             @Override
             public void onAnimationEnd(Animator animator) {
-                ripple.animate().setDuration(300).scaleX(1).scaleY(1).alpha(0.5f).setListener(new SimpleAnimatorListener(){
+                ripple.animate().setDuration(300).scaleX(1).scaleY(1).alpha(0.5f).setListener(new SimpleAnimatorListener() {
                     @Override
                     public void onAnimationEnd(Animator animator) {
-                        ripple.animate().setDuration(500).scaleX(2).scaleY(2).alpha(0.2f).setListener(new SimpleAnimatorListener(){
+                        ripple.animate().setDuration(500).scaleX(2).scaleY(2).alpha(0.2f).setListener(new SimpleAnimatorListener() {
                             @Override
                             public void onAnimationEnd(Animator animator) {
                                 ripple.setVisibility(View.GONE);
@@ -449,13 +453,28 @@ public class TakeActivity extends AppCompatActivity implements SurfaceHolder.Cal
         if (null == camera) {
 
             try {
-
-                camera = Camera.open(0);
+                if (isFrontCameraEnabled) {
+                    int cameraCount = 0;
+                    Camera.CameraInfo cameraInfo = new Camera.CameraInfo();
+                    cameraCount = Camera.getNumberOfCameras();
+                    for (int camIdx = 0; camIdx < cameraCount; camIdx++) {
+                        Camera.getCameraInfo(camIdx, cameraInfo);
+                        if (cameraInfo.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
+                            try {
+                                camera = Camera.open(camIdx);
+                                this.cameraInfo = cameraInfo;
+                            } catch (RuntimeException e) {
+                                Log.e(TAG, "Camera failed to open: " + e.getLocalizedMessage());
+                            }
+                        }
+                    }
+                } else {
+                    camera = Camera.open(0);
+                }
                 camera.setPreviewDisplay(holder);
                 initCamera();
                 camera.startPreview();
-            }
-            catch (Throwable e) {
+            } catch (Throwable e) {
 
                 e.printStackTrace();
             }
@@ -477,8 +496,7 @@ public class TakeActivity extends AppCompatActivity implements SurfaceHolder.Cal
                 camera.release();
                 camera = null;
             }
-        }
-        catch (Exception ignored) {
+        } catch (Exception ignored) {
             Log.d(TAG, "surfaceDestroyed: " + ignored.toString());
         }
     }
@@ -490,13 +508,10 @@ public class TakeActivity extends AppCompatActivity implements SurfaceHolder.Cal
             public void run() {
 
 
-
-
             }
         };
 
-        try
-        {
+        try {
             if (camera == null) {
                 return;
             }
@@ -510,8 +525,7 @@ public class TakeActivity extends AppCompatActivity implements SurfaceHolder.Cal
                     }
                 }
             });
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -534,6 +548,7 @@ public class TakeActivity extends AppCompatActivity implements SurfaceHolder.Cal
         setDisplay(parameters, camera);
 
         try {
+            camera.setDisplayOrientation(detectCameraDisplayOrientation(this,cameraInfo));
             camera.setParameters(parameters);
         } catch (Exception e) {
             Log.wtf(TAG, "initCamera: ", e);
@@ -541,6 +556,29 @@ public class TakeActivity extends AppCompatActivity implements SurfaceHolder.Cal
 
         camera.startPreview();
         camera.cancelAutoFocus();
+    }
+
+    private  int detectCameraDisplayOrientation(Activity activity,
+                                                Camera.CameraInfo info) {
+
+        int rotation = activity.getWindowManager().getDefaultDisplay()
+                .getRotation();
+        int degrees = 0;
+        switch (rotation) {
+            case Surface.ROTATION_0: degrees = 0; break;
+            case Surface.ROTATION_90: degrees = 90; break;
+            case Surface.ROTATION_180: degrees = 180; break;
+            case Surface.ROTATION_270: degrees = 270; break;
+        }
+
+        int result;
+        if (info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
+            result = (info.orientation + degrees) % 360;
+            result = (360 - result) % 360;  // compensate the mirror
+        } else {  // back-facing
+            result = (info.orientation - degrees + 360) % 360;
+        }
+        return result;
     }
 
     private void previewPicture() {
@@ -586,7 +624,13 @@ public class TakeActivity extends AppCompatActivity implements SurfaceHolder.Cal
 
             Matrix matrix = new Matrix();
             matrix.postScale(newScale, newScale);
-            matrix.postRotate(90);
+
+            if(!isFrontCameraEnabled) {
+                matrix.postRotate(90);
+            }else {
+                matrix.postRotate(270);
+                matrix.postScale(-1, 1);
+            }
 
             Bitmap resizedBitmap = Bitmap.createBitmap(bitmap, 0, 0, width, height, matrix, true);
 
@@ -616,7 +660,7 @@ public class TakeActivity extends AppCompatActivity implements SurfaceHolder.Cal
             controllersAccept.setVisibility(View.VISIBLE);
 
             //Show crop options
-            if(isCropEnabled){
+            if (isCropEnabled) {
                 surface.setVisibility(View.GONE);
                 preview.setVisibility(View.VISIBLE);
 
@@ -781,9 +825,9 @@ public class TakeActivity extends AppCompatActivity implements SurfaceHolder.Cal
 
         List<String> focusModes = parameters.getSupportedFocusModes();
 
-        if (focusModes.contains(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE)){
+        if (focusModes.contains(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE)) {
             mode = Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE;
-        } else if (focusModes.contains(Camera.Parameters.FOCUS_MODE_AUTO)){
+        } else if (focusModes.contains(Camera.Parameters.FOCUS_MODE_AUTO)) {
             mode = Camera.Parameters.FOCUS_MODE_AUTO;
         }
         return mode;
@@ -794,8 +838,7 @@ public class TakeActivity extends AppCompatActivity implements SurfaceHolder.Cal
         if (Build.VERSION.SDK_INT >= 8) {
 
             setDisplayOrientation(camera, 90);
-        }
-        else {
+        } else {
 
             parameters.setRotation(90);
         }
@@ -813,8 +856,8 @@ public class TakeActivity extends AppCompatActivity implements SurfaceHolder.Cal
 
                 downPolymorphic.invoke(camera, i);
             }
+        } catch (Exception ignore) {
         }
-        catch (Exception ignore) { }
     }
 
     private float spacing(MotionEvent event) {
@@ -842,8 +885,7 @@ public class TakeActivity extends AppCompatActivity implements SurfaceHolder.Cal
             if (curZoomValue < 0) {
 
                 curZoomValue = 0;
-            }
-            else if (curZoomValue > params.getMaxZoom()) {
+            } else if (curZoomValue > params.getMaxZoom()) {
 
                 curZoomValue = params.getMaxZoom();
             }
@@ -856,8 +898,7 @@ public class TakeActivity extends AppCompatActivity implements SurfaceHolder.Cal
                 } catch (Exception e) {
                     Log.wtf(TAG, "addZoomIn: ", e);
                 }
-            }
-            else {
+            } else {
 
                 camera.startSmoothZoom(curZoomValue);
             }
@@ -903,9 +944,9 @@ public class TakeActivity extends AppCompatActivity implements SurfaceHolder.Cal
 
         parameters.setFocusMode(getFocusMode(parameters));*/
 
-        if (camera != null ) {
-            if (parameters.getMaxNumMeteringAreas() > 0){
-                Log.i(TAG,"fancy !");
+        if (camera != null) {
+            if (parameters.getMaxNumMeteringAreas() > 0) {
+                Log.i(TAG, "fancy !");
                 Rect rect = calculateFocusArea(x, y);
 
                 parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
@@ -928,14 +969,14 @@ public class TakeActivity extends AppCompatActivity implements SurfaceHolder.Cal
 
     private int clamp(int touchCoordinateInCameraReper, int focusAreaSize) {
         int result;
-        if (Math.abs(touchCoordinateInCameraReper)+focusAreaSize/2>1000){
-            if (touchCoordinateInCameraReper>0){
-                result = 1000 - focusAreaSize/2;
+        if (Math.abs(touchCoordinateInCameraReper) + focusAreaSize / 2 > 1000) {
+            if (touchCoordinateInCameraReper > 0) {
+                result = 1000 - focusAreaSize / 2;
             } else {
-                result = -1000 + focusAreaSize/2;
+                result = -1000 + focusAreaSize / 2;
             }
-        } else{
-            result = touchCoordinateInCameraReper - focusAreaSize/2;
+        } else {
+            result = touchCoordinateInCameraReper - focusAreaSize / 2;
         }
         return result;
     }
